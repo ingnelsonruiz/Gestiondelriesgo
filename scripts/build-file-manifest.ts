@@ -18,8 +18,8 @@ function findXlsxFiles(dir: string, baseDirForRelative: string): string[] {
     if (file.isDirectory()) {
       results = results.concat(findXlsxFiles(fullPath, baseDirForRelative));
     } else if (file.isFile() && file.name.toLowerCase().endsWith(".xlsx")) {
-      // Guardamos la ruta relativa a la carpeta base "BASES DE DATOS"
-      results.push(path.relative(baseDirForRelative, fullPath));
+      // Usamos path.sep para asegurar compatibilidad entre SO
+      results.push(path.relative(baseDirForRelative, fullPath).replace(/\\/g, '/'));
     }
   }
   return results;
