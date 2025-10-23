@@ -13,7 +13,7 @@ import {ProcessFileResponseSchema} from './schemas';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import {z} from 'zod';
-import {listModels as genkitListModels} from 'genkit';
+import { listModelsTool } from './tools/list-models-tool';
 
 export async function listFiles(): Promise<string[]> {
     const manifestPath = path.join(process.cwd(), 'public', 'bases-manifest.json');
@@ -97,9 +97,8 @@ const processFileBufferFlow = ai.defineFlow(
 
 
 export async function listModels(): Promise<string[]> {
-    const models = await genkitListModels();
+    const models = await ai.run(listModelsTool);
     return models
-        .filter(m => m.name.startsWith('googleai/'))
-        .map(m => m.name.replace('googleai/', ''))
+        .filter(m => m.startsWith('gemini'))
         .sort();
 }
