@@ -571,7 +571,7 @@ export default function InformesFenixPage() {
   const handleFetchModels = () => {
     setIsFetchingModels(true);
     listModels()
-        .then(setAvailableModels)
+        .then(models => setAvailableModels(models.map(m => m.name)))
         .catch(err => {
             console.error("Failed to list models:", err);
             toast({ title: 'Error', description: 'No se pudo cargar la lista de modelos de IA.', variant: 'destructive' });
@@ -1104,3 +1104,5 @@ export default function InformesFenixPage() {
     </>
   );
 }
+
+    
