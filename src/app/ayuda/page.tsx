@@ -26,7 +26,7 @@ export default function AyudaPage() {
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
                     <RefreshCw className="h-5 w-5 text-destructive" />
-                    <span className="text-destructive">Paso Crítico: Actualización de Archivos</span>
+                    <span className="text-destructive font-bold">Paso Crítico: Actualización de Archivos</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -35,7 +35,7 @@ export default function AyudaPage() {
                       <AlertTriangle className="h-4 w-4" />
                       <AlertTitle>¡Importante!</AlertTitle>
                       <AlertDescription>
-                        Cada vez que agregue, elimine o cambie el nombre de un archivo en las carpetas <code>public/</code> o <code>public/BASES DE DATOS/</code>, <strong>debe detener y reiniciar (recompilar) la aplicación</strong>. El sistema solo escanea los archivos al arrancar. Si no reinicia, los cambios no se verán reflejados en los menús desplegables del módulo de informes.
+                        Cada vez que agregue, elimine o cambie el nombre de un archivo en la carpeta <code>public/BASES DE DATOS/</code>, <strong>debe detener y reiniciar (recompilar) la aplicación</strong>. El sistema solo escanea los archivos al arrancar. Si no reinicia, los cambios no se verán reflejados en los menús desplegables del módulo de informes.
                       </AlertDescription>
                     </Alert>
                 </div>
