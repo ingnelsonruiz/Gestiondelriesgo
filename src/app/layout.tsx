@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, BarChart3, PanelLeft } from 'lucide-react';
+import { Home, BarChart3, PanelLeft, FileQuestion } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -47,6 +47,14 @@ export default function RootLayout({
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Ayuda">
+                                    <Link href="/ayuda">
+                                        <FileQuestion />
+                                        <span>Ayuda</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroup>
                 </SidebarContent>
@@ -54,10 +62,8 @@ export default function RootLayout({
             <SidebarInset>
                 <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
                     <SidebarTrigger className="md:hidden">
-                        <Button size="icon" variant="outline">
-                            <PanelLeft className="h-5 w-5" />
-                            <span className="sr-only">Abrir/Cerrar Menú</span>
-                        </Button>
+                        <PanelLeft className="h-5 w-5" />
+                        <span className="sr-only">Abrir/Cerrar Menú</span>
                     </SidebarTrigger>
                 </header>
                 {children}

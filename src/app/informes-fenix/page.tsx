@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUp, FileDown, Loader2, FileText, Files, RefreshCw, Trash2, Cpu, Eye } from 'lucide-react';
+import { FileUp, FileDown, Loader2, FileText, Files, RefreshCw, Trash2, Cpu, Eye, Info } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -727,9 +727,54 @@ export default function InformesFenixPage() {
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
           <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle>Cargue y Configuración</CardTitle>
-              <CardDescription>Seleccione el año y el archivo de datos para analizar. La población se cruzará con <code>Poblacion 2025.csv</code>.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle>Cargue y Configuración</CardTitle>
+                <CardDescription>Seleccione el año y el archivo de datos para analizar. La población se cruzará con <code>Poblacion 2025.csv</code>.</CardDescription>
+              </div>
+               <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Info className="h-4 w-4" />
+                      <span className="sr-only">Instrucciones</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Instrucciones de Uso</DialogTitle>
+                      <DialogDescription>
+                         Para usar la aplicación, asegúrese de que los siguientes archivos estén en la carpeta `public` de su proyecto:
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="text-sm text-muted-foreground">
+                        <ul className="list-disc space-y-2 pl-5">
+                            <li>
+                                <b>Archivo de Población General:</b>
+                                <ul className="list-inside list-disc pl-5 mt-1">
+                                  <li>Nombre: <code>Poblacion 2025.csv</code></li>
+                                  <li>Ubicación: <code>/public/Poblacion 2025.csv</code></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <b>Archivos de Datos Mensuales:</b>
+                                <ul className="list-inside list-disc pl-5 mt-1">
+                                    <li>Formato: <code>.xlsx</code></li>
+                                    <li>Ubicación: Dentro de <code>/public/BASES DE DATOS/</code>, organizados por año.</li>
+                                    <li>Ejemplo: <code>/public/BASES DE DATOS/2024/ENERO.xlsx</code></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p className="mt-4 font-semibold">
+                            <b>Importante:</b> Si añade, mueve o renombra archivos, debe <b>recompilar la aplicación</b> para que los cambios se reflejen en la lista de selección.
+                        </p>
+                    </div>
+                     <DialogFooter>
+                        <DialogTrigger asChild>
+                            <Button>Entendido</Button>
+                        </DialogTrigger>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
             </CardHeader>
             <CardContent>
                <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6 items-end">
