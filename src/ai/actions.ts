@@ -6,6 +6,7 @@
  * - processSelectedFile - Downloads a file from the public folder and processes it.
  * - listFiles - Fetches the manifest of available XLSX files.
  * - listModels - Fetches the list of available AI models from the provider.
+ * - uploadFile - Handles uploading a new data file.
  */
 import {ai} from '@/ai/genkit';
 import {DataProcessingResult, processDataFile} from '@/lib/data-processing';
@@ -15,11 +16,14 @@ import * as fs from 'fs/promises';
 import {z} from 'zod';
 import { listModels as genkitListModels } from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { run } from '../../scripts/build-file-manifest';
+
 
 export async function listFiles(): Promise<string[]> {
     const manifestPath = path.join(process.cwd(), 'public', 'bases-manifest.json');
 
     try {
+        run(); // Regenerate manifest before reading
         const manifestContent = await fs.readFile(manifestPath, 'utf-8');
         const data = JSON.parse(manifestContent);
         return Array.isArray(data.files) ? data.files : [];
@@ -105,4 +109,41 @@ export async function listModels(): Promise<ModelReference<any>[]> {
         .sort((a,b) => a.name.localeCompare(b.name));
 }
 
-    
+const UploadFileSchema = z.object({
+  fileDataUri: z.string(),
+  year: z.string(),
+  month: z.string(),
+});
+
+export const uploadFile = ai.defineFlow(
+  {
+    name: 'uploadFile',
+    inputSchema: UploadFileSchema,
+    outputSchema: z.object({ success: z.boolean(), path: z.string() }),
+  },
+  async ({ fileDataUri, year, month }) => {
+    const baseDir = path.join(process.cwd(), 'public', 'BASES DE DATOS');
+    const yearDir = path.join(baseDir, year);
+    const fileName = `${month.toUpperCase()}.xlsx`;
+    const filePath = path.join(yearDir, fileName);
+
+    try {
+      // Create year directory if it doesn't exist
+      await fs.mkdir(yearDir, { recursive: true });
+
+      // Convert data URI to buffer
+      const buffer = Buffer.from(fileDataUri.split(',')[1], 'base64');
+
+      // Write file to disk
+      await fs.writeFile(filePath, buffer);
+      
+      // Re-run the manifest script
+      run();
+
+      return { success: true, path: filePath };
+    } catch (error: any) {
+      console.error(`Error al guardar el archivo: ${error.message}`);
+      throw new Error(`No se pudo guardar el archivo en el servidor. Detalles: ${error.message}`);
+    }
+  }
+);

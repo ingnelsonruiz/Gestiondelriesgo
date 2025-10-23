@@ -1,3 +1,4 @@
+
 // scripts/build-file-manifest.ts
 import fs from "fs";
 import path from "path";
@@ -25,7 +26,7 @@ function findXlsxFiles(dir: string, baseDirForRelative: string): string[] {
   return results;
 }
 
-function main() {
+export function run() {
   const outPath = path.join(process.cwd(), "public", "bases-manifest.json");
   const publicDir = path.join(process.cwd(), "public");
 
@@ -33,7 +34,7 @@ function main() {
     console.warn("Advertencia: No se encontró la carpeta 'public/BASES DE DATOS'. Se generará un manifiesto vacío.");
     
     if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir);
+      fs.mkdirSync(publicDir, { recursive: true });
     }
     
     fs.writeFileSync(outPath, JSON.stringify({ folder: "BASES DE DATOS", files: [] }, null, 2), "utf8");
@@ -46,4 +47,8 @@ function main() {
   console.log(`Manifiesto generado: ${outPath} (${files.length} archivos)`);
 }
 
-main();
+
+// If called directly from command line
+if (require.main === module) {
+  run();
+}

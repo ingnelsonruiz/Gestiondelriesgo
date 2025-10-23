@@ -4,15 +4,16 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUp, FileDown, Loader2, FileText, Files, RefreshCw, Trash2, Cpu, Eye, Info } from 'lucide-react';
+import { FileUp, FileDown, Loader2, FileText, Files, RefreshCw, Trash2, Cpu, Eye, Info, Upload } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Script from 'next/script';
 import { DataProcessingResult, GroupedResult, KpiResults, HeaderMap } from '@/lib/data-processing';
-import { processSelectedFile, listFiles, listModels } from '@/ai/actions';
+import { processSelectedFile, listFiles, listModels, uploadFile } from '@/ai/actions';
 import { generateReportText } from '@/ai/flows/report-flow';
 import { AIContent } from '@/ai/schemas';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -55,6 +56,12 @@ export default function InformesFenixPage() {
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('gemini-pro-latest');
   const [isExportPreviewOpen, setIsExportPreviewOpen] = useState(false);
+
+  // State for file upload
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [uploadYear, setUploadYear] = useState<string>(String(new Date().getFullYear()));
+  const [uploadMonth, setUploadMonth] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
 
 
   const fetchFiles = useCallback(() => {
@@ -158,6 +165,54 @@ export default function InformesFenixPage() {
 
     startProcessing(processSelectedFile(selectedFile, year, month));
   };
+  
+  const handleFileUpload = async () => {
+    if (!fileToUpload || !uploadYear || !uploadMonth) {
+      toast({
+        title: 'Datos incompletos',
+        description: 'Por favor, seleccione un archivo, un año y un nombre para el mes.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    toast({ title: 'Subiendo archivo...', description: 'Por favor espere.' });
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(fileToUpload);
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+        
+        await uploadFile({
+          fileDataUri: base64Data,
+          year: uploadYear,
+          month: uploadMonth,
+        });
+
+        toast({ title: '¡Éxito!', description: 'El archivo se ha subido correctamente.' });
+        
+        // Clear form and refresh file list
+        setFileToUpload(null);
+        setUploadMonth('');
+        fetchFiles(); 
+      };
+      reader.onerror = (error) => {
+        throw new Error('No se pudo leer el archivo: ' + error);
+      };
+    } catch (error: any) {
+      console.error('Error al subir archivo:', error);
+      toast({
+        title: 'Error al subir',
+        description: error.message || 'No se pudo completar la subida del archivo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
 
   const getInasistentesData = (
     relevantRows: any[][],
@@ -768,7 +823,7 @@ export default function InformesFenixPage() {
                             </li>
                         </ul>
                         <p className="mt-4 font-semibold">
-                            <b>Importante:</b> Si añade, mueve o renombra archivos, debe <b>recompilar la aplicación</b> para que los cambios se reflejen en la lista de selección.
+                            <b>Importante:</b> Después de subir un archivo nuevo, la lista se actualizará automáticamente.
                         </p>
                     </div>
                      <DialogFooter>
@@ -842,6 +897,60 @@ export default function InformesFenixPage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+                <CardTitle>Subir Nuevo Archivo de Datos</CardTitle>
+                <CardDescription>
+                Añada un nuevo archivo Excel a la plataforma. Especifique el año y el nombre del mes (ej. ENERO).
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid md:grid-cols-4 gap-6 items-end">
+                    <div className="grid gap-2">
+                        <Label htmlFor="file-upload-input">Archivo (.xlsx)</Label>
+                        <Input
+                        id="file-upload-input"
+                        type="file"
+                        accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        onChange={(e) => setFileToUpload(e.target.files ? e.target.files[0] : null)}
+                        disabled={isUploading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="upload-year">Año</Label>
+                        <Input
+                        id="upload-year"
+                        type="number"
+                        placeholder="Ej: 2025"
+                        value={uploadYear}
+                        onChange={(e) => setUploadYear(e.target.value)}
+                        disabled={isUploading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="upload-month">Nombre del Mes</Label>
+                        <Input
+                        id="upload-month"
+                        type="text"
+                        placeholder="Ej: SEPTIEMBRE"
+                        value={uploadMonth}
+                        onChange={(e) => setUploadMonth(e.target.value.toUpperCase())}
+                        disabled={isUploading}
+                        />
+                    </div>
+                    <Button onClick={handleFileUpload} disabled={isUploading || !fileToUpload || !uploadYear || !uploadMonth}>
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                        Subir Archivo
+                    </Button>
+                </div>
+                 {fileToUpload && (
+                    <div className="mt-4 text-sm text-muted-foreground">
+                        Archivo seleccionado: <strong>{fileToUpload.name}</strong>
+                    </div>
+                )}
             </CardContent>
           </Card>
           
@@ -1107,3 +1216,5 @@ export default function InformesFenixPage() {
     </>
   );
 }
+
+    
