@@ -61,12 +61,10 @@ export default function InformesFenixPage() {
     setIsRefreshing(true);
     listFiles().then(files => {
         setAvailableFiles(files);
-        // Correctly extract unique years from paths like "2025/SEPTEMBER.xlsx"
         const years = [...new Set(files.map(f => f.split('/')[0]))].sort((a,b) => b.localeCompare(a));
         setAvailableYears(years);
 
         if (years.length > 0) {
-            // Set the latest year as default, or keep current if it's still valid
             const latestYear = years[0];
             setSelectedYear(currentYear => years.includes(currentYear) ? currentYear : latestYear);
         } else if (files.length === 0) {
@@ -94,20 +92,15 @@ export default function InformesFenixPage() {
 
  const filteredFiles = useMemo(() => {
     if (!selectedYear) return [];
-    // Filter files for the selected year
     return availableFiles.filter(file => file.startsWith(`${selectedYear}/`));
   }, [selectedYear, availableFiles]);
 
   useEffect(() => {
-    // When the filtered files change (e.g., after selecting a new year),
-    // update the selected file.
     if (filteredFiles.length > 0) {
-        // If the currently selected file is not in the new list, select the first one.
         if (!filteredFiles.includes(selectedFile)) {
           setSelectedFile(filteredFiles[0]);
         }
     } else {
-        // If there are no files for the selected year, clear the selection.
         setSelectedFile('');
     }
   }, [filteredFiles, selectedFile]);
@@ -340,7 +333,7 @@ export default function InformesFenixPage() {
         
         const datosInforme = mapToInformeDatos(resultsForPdf, aiContent, targetIps, targetMunicipio, false);
         
-        const backgroundImg = await loadImageAsBase64('/imagenes pdf/IMAGENEN UNIFICADA.jpg');
+        const backgroundImg = await loadImageAsBase64('IMAGENEN UNIFICADA.jpg');
         
         const images: PdfImages = { background: backgroundImg };
         
@@ -388,7 +381,7 @@ export default function InformesFenixPage() {
     pdfMake.vfs = pdfFonts;
     
     try {
-        const backgroundImg = await loadImageAsBase64('/imagenes pdf/IMAGENEN UNIFICADA.jpg');
+        const backgroundImg = await loadImageAsBase64('IMAGENEN UNIFICADA.jpg');
       
         const images: PdfImages = { background: backgroundImg };
       
@@ -654,7 +647,7 @@ export default function InformesFenixPage() {
           label: 'Resultado Creatinina', 
           key: 'RESULTADO_CREATININA',
           isPercentage: true, 
-          value: formatPercent(kpis.DENOMINADOR_CREATININA > 0 ? kpis.NUMERADOR_CREATININA / kpis.DENOMINADOR_CREATINina : 0),
+          value: formatPercent(kpis.DENOMINADOR_CREATININA > 0 ? kpis.NUMERADOR_CREATININA / kpis.DENOMINADOR_CREATININA : 0),
           description: '(Numerador / Denominador)' 
         },
       ]
@@ -1114,3 +1107,5 @@ export default function InformesFenixPage() {
     </>
   );
 }
+
+    
