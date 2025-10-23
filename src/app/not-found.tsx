@@ -1,25 +1,26 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Frown } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-center">
-      <div className="flex items-center justify-center space-x-4">
-        <Frown className="h-16 w-16 text-primary" />
-        <div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
+      <div className="space-y-4">
+        <div className="flex items-center justify-center gap-4">
+          <Logo iconOnly />
           <h1 className="text-6xl font-bold font-headline text-primary">404</h1>
         </div>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+          Oops! Page Not Found.
+        </h2>
+        <p className="max-w-md text-muted-foreground">
+          The page you are looking for does not exist, has been moved, or you do
+          not have permission to access it.
+        </p>
+        <Button asChild className="mt-4">
+          <Link href="/">Go to Dashboard</Link>
+        </Button>
       </div>
-      <h2 className="mt-6 text-2xl font-semibold tracking-tight text-foreground">
-        Oops! Page Not Found.
-      </h2>
-      <p className="mt-2 text-muted-foreground">
-        The page you are looking for does not exist or has been moved.
-      </p>
-      <Button asChild className="mt-8">
-        <Link href="/dashboard">Go back to Dashboard</Link>
-      </Button>
     </div>
   );
 }
