@@ -53,7 +53,7 @@ export default function InformesFenixPage() {
   
   const [availableModels, setAvailableModels] = useState<ModelReference[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-1.5-flash-latest');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-1.5-pro-latest');
   const [isExportPreviewOpen, setIsExportPreviewOpen] = useState(false);
 
 
@@ -1115,3 +1115,4 @@ export default function InformesFenixPage() {
   );
 }
 
+    
