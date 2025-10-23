@@ -18,7 +18,7 @@ function findXlsxFiles(dir: string, baseDirForRelative: string): string[] {
     if (file.isDirectory()) {
       results = results.concat(findXlsxFiles(fullPath, baseDirForRelative));
     } else if (file.isFile() && file.name.toLowerCase().endsWith(".xlsx")) {
-      // Usamos path.sep para asegurar compatibilidad entre SO
+      // Usamos path.sep para asegurar compatibilidad entre SO y lo reemplazamos por /
       results.push(path.relative(baseDirForRelative, fullPath).replace(/\\/g, '/'));
     }
   }
@@ -27,11 +27,11 @@ function findXlsxFiles(dir: string, baseDirForRelative: string): string[] {
 
 function main() {
   const outPath = path.join(process.cwd(), "public", "bases-manifest.json");
+  const publicDir = path.join(process.cwd(), "public");
 
   if (!fs.existsSync(baseDir)) {
     console.warn("Advertencia: No se encontró la carpeta 'public/BASES DE DATOS'. Se generará un manifiesto vacío.");
     
-    const publicDir = path.join(process.cwd(), "public");
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir);
     }
