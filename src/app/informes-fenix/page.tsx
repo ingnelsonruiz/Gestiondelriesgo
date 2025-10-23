@@ -1107,5 +1107,3 @@ export default function InformesFenixPage() {
     </>
   );
 }
-
-    
