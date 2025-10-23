@@ -1,10 +1,21 @@
-import type {Metadata} from 'next';
+
+import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import { Inter as FontSans } from 'next/font/google';
+import { cn } from '@/lib/utils';
+import { Sidebar, SidebarContent, SidebarGroup, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Home, BarChart3, PanelLeft } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
+const fontSans = FontSans({ 
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
-  title: 'Fenix Reports',
-  description: 'Generate reports and get AI-powered insights.',
+  title: 'Gestión del Riesgo - Fenix',
+  description: 'Plataforma para la gestión de indicadores de riesgo en salud.',
 };
 
 export default function RootLayout({
@@ -13,15 +24,45 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
-        {children}
-        <Toaster />
+    <html lang="es" suppressHydrationWarning>
+      <body suppressHydrationWarning={true} className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+        <SidebarProvider>
+            <Sidebar side="left" variant="sidebar" collapsible="icon">
+                <SidebarContent>
+                    <SidebarGroup>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Inicio">
+                                    <Link href="/">
+                                        <Home />
+                                        <span>Inicio</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Informes Fenix">
+                                    <Link href="/informes-fenix">
+                                        <BarChart3 />
+                                        <span>Informes Fenix</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroup>
+                </SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+                <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+                    <SidebarTrigger className="md:hidden">
+                        <Button size="icon" variant="outline">
+                            <PanelLeft className="h-5 w-5" />
+                            <span className="sr-only">Abrir/Cerrar Menú</span>
+                        </Button>
+                    </SidebarTrigger>
+                </header>
+                {children}
+            </SidebarInset>
+        </SidebarProvider>
       </body>
     </html>
   );
