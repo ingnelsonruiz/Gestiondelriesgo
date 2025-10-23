@@ -22,6 +22,7 @@ import JSZip from 'jszip';
 import { descargarInformePDF, buildDocDefinition, InformeDatos, PdfImages } from '@/lib/informe-riesgo-pdf';
 import { loadImageAsBase64 } from '@/lib/image-loader';
 import { Toaster } from '@/components/ui/toaster';
+import { ModelReference } from 'genkit/ai';
 
 
 // Make XLSX global if it's loaded from a script
@@ -50,7 +51,7 @@ export default function InformesFenixPage() {
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [availableModels, setAvailableModels] = useState<ModelReference[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('gemini-1.5-flash-latest');
   const [isExportPreviewOpen, setIsExportPreviewOpen] = useState(false);
@@ -60,10 +61,12 @@ export default function InformesFenixPage() {
     setIsRefreshing(true);
     listFiles().then(files => {
         setAvailableFiles(files);
+        // Correctly extract unique years from paths like "2025/SEPTEMBER.xlsx"
         const years = [...new Set(files.map(f => f.split('/')[0]))].sort().reverse();
         setAvailableYears(years);
 
         if (years.length > 0) {
+            // Set the latest year as default, or keep current if it's still valid
             const latestYear = years[0];
             setSelectedYear(currentYear => years.includes(currentYear) ? currentYear : latestYear);
         } else if (files.length === 0) {
@@ -91,16 +94,23 @@ export default function InformesFenixPage() {
 
  const filteredFiles = useMemo(() => {
     if (!selectedYear) return [];
+    // Filter files for the selected year
     return availableFiles.filter(file => file.startsWith(`${selectedYear}/`));
   }, [selectedYear, availableFiles]);
 
   useEffect(() => {
-    if (filteredFiles.length > 0 && !filteredFiles.includes(selectedFile)) {
-      setSelectedFile(filteredFiles[0]);
-    } else if (filteredFiles.length === 0) {
-      setSelectedFile('');
+    // When the filtered files change (e.g., after selecting a new year),
+    // update the selected file.
+    if (filteredFiles.length > 0) {
+        // If the currently selected file is not in the new list, select the first one.
+        if (!filteredFiles.includes(selectedFile)) {
+          setSelectedFile(filteredFiles[0]);
+        }
+    } else {
+        // If there are no files for the selected year, clear the selection.
+        setSelectedFile('');
     }
-  }, [selectedYear, filteredFiles, selectedFile]);
+  }, [filteredFiles, selectedFile]);
 
 
  const startProcessing = (action: Promise<DataProcessingResult>) => {
@@ -131,7 +141,7 @@ export default function InformesFenixPage() {
         return;
     }
 
-    const parts = selectedFile.replace('.xlsx', '').split('/');
+    const parts = selectedFile.replace(/\.xlsx$/i, '').split('/');
     if (parts.length < 2) {
       toast({ title: 'Error de formato', description: 'El nombre del archivo no tiene el formato esperado "AÑO/MES.xlsx"', variant: 'destructive' });
       return;
@@ -571,7 +581,7 @@ export default function InformesFenixPage() {
   const handleFetchModels = () => {
     setIsFetchingModels(true);
     listModels()
-        .then(models => setAvailableModels(models.map(m => m.name)))
+        .then(models => setAvailableModels(models))
         .catch(err => {
             console.error("Failed to list models:", err);
             toast({ title: 'Error', description: 'No se pudo cargar la lista de modelos de IA.', variant: 'destructive' });
@@ -864,7 +874,7 @@ export default function InformesFenixPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 {availableModels.length > 0 ? availableModels.map(model => (
-                                    <SelectItem key={model} value={model}>{model}</SelectItem>
+                                    <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
                                 )) : <SelectItem value={selectedModel} disabled>{selectedModel}</SelectItem>}
                             </SelectContent>
                         </Select>
@@ -875,7 +885,7 @@ export default function InformesFenixPage() {
                             <p className="text-sm font-medium mb-2">Modelos encontrados:</p>
                             <ul className="list-disc pl-5 space-y-1 text-sm">
                                 {availableModels.map(model => (
-                                    <li key={model}><code>{model}</code></li>
+                                    <li key={model.name}><code>{model.name}</code></li>
                                 ))}
                             </ul>
                         </div>

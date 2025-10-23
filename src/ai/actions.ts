@@ -104,3 +104,5 @@ export async function listModels(): Promise<ModelReference<any>[]> {
         .map(m => ({ ...m, name: m.name.replace('googleai/', '')}))
         .sort((a,b) => a.name.localeCompare(b.name));
 }
+
+    
