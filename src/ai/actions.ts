@@ -14,7 +14,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import {z} from 'zod';
 import { listModels as genkitListModels } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { ModelReference } from 'genkit/ai';
 
 export async function listFiles(): Promise<string[]> {
     const manifestPath = path.join(process.cwd(), 'public', 'bases-manifest.json');
@@ -97,10 +97,10 @@ const processFileBufferFlow = ai.defineFlow(
 );
 
 
-export async function listModels(): Promise<string[]> {
+export async function listModels(): Promise<ModelReference<any>[]> {
     const models = await genkitListModels();
     return models
         .filter(m => m.name.startsWith('googleai/'))
-        .map(m => m.name.replace('googleai/', ''))
-        .sort();
+        .map(m => ({ ...m, name: m.name.replace('googleai/', '')}))
+        .sort((a,b) => a.name.localeCompare(b.name));
 }

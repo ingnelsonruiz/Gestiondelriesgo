@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, BarChart3, PanelLeft, FileQuestion } from 'lucide-react';
+import { Home, BarChart3, PanelLeft, FileQuestion, Server } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -44,6 +44,14 @@ export default function RootLayout({
                                     <Link href="/informes-fenix">
                                         <BarChart3 />
                                         <span>Informes Fenix</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Diagnóstico IA">
+                                    <Link href="/tools/list-models">
+                                        <Server />
+                                        <span>Diagnóstico IA</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
