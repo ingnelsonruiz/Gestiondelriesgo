@@ -333,7 +333,7 @@ export default function InformesFenixPage() {
         
         const datosInforme = mapToInformeDatos(resultsForPdf, aiContent, targetIps, targetMunicipio, false);
         
-        const backgroundImg = await loadImageAsBase64('IMAGENEN UNIFICADA.jpg');
+        const backgroundImg = await loadImageAsBase64('imagenes pdf/pdf.jpg');
         
         const images: PdfImages = { background: backgroundImg };
         
@@ -381,7 +381,7 @@ export default function InformesFenixPage() {
     pdfMake.vfs = pdfFonts;
     
     try {
-        const backgroundImg = await loadImageAsBase64('IMAGENEN UNIFICADA.jpg');
+        const backgroundImg = await loadImageAsBase64('imagenes pdf/pdf.jpg');
       
         const images: PdfImages = { background: backgroundImg };
       
