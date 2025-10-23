@@ -53,7 +53,7 @@ export default function InformesFenixPage() {
   
   const [availableModels, setAvailableModels] = useState<ModelReference[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-1.5-pro-latest');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-pro-latest');
   const [isExportPreviewOpen, setIsExportPreviewOpen] = useState(false);
 
 
@@ -654,7 +654,7 @@ export default function InformesFenixPage() {
           label: 'Resultado Creatinina', 
           key: 'RESULTADO_CREATININA',
           isPercentage: true, 
-          value: formatPercent(kpis.DENOMINADOR_CREATININA > 0 ? kpis.NUMERADOR_CREATININA / kpis.DENOMINADOR_CREATININA : 0),
+          value: formatPercent(kpis.DENOMINADOR_CREATININA > 0 ? kpis.NUMERADOR_CREATININA / kpis.DENOMINADOR_CREATINina : 0),
           description: '(Numerador / Denominador)' 
         },
       ]
@@ -1114,5 +1114,3 @@ export default function InformesFenixPage() {
     </>
   );
 }
-
-    
