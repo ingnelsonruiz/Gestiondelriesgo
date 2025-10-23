@@ -62,7 +62,7 @@ export default function InformesFenixPage() {
     listFiles().then(files => {
         setAvailableFiles(files);
         // Correctly extract unique years from paths like "2025/SEPTEMBER.xlsx"
-        const years = [...new Set(files.map(f => f.split('/')[0]))].sort().reverse();
+        const years = [...new Set(files.map(f => f.split('/')[0]))].sort((a,b) => b.localeCompare(a));
         setAvailableYears(years);
 
         if (years.length > 0) {
@@ -815,7 +815,7 @@ export default function InformesFenixPage() {
                     <SelectContent>
                       {filteredFiles.length > 0 ? (
                         filteredFiles.map(file => (
-                          <SelectItem key={file} value={file}>{file.split('/')[1].replace(/\.xlsx$/i, '')}</SelectItem>
+                          <SelectItem key={file} value={file}>{file.split('/')[1]?.replace(/\.xlsx$/i, '')}</SelectItem>
                         ))
                       ) : (
                         <SelectItem value="no-files" disabled>No hay archivos para este año</SelectItem>
@@ -1114,5 +1114,3 @@ export default function InformesFenixPage() {
     </>
   );
 }
-
-    
