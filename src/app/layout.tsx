@@ -47,7 +47,7 @@ export default function RootLayout({
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                            <SidebarMenuItem>
+                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild tooltip="Diagnóstico IA">
                                     <Link href="/tools/list-models">
                                         <Server />
