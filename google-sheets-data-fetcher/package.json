@@ -1,0 +1,18 @@
+{
+  "name": "google-sheets-data-fetcher",
+  "version": "1.0.0",
+  "description": "Un módulo aislado para obtener datos de Google Sheets.",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "papaparse": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/papaparse": "^5.3.14",
+    "tsx": "^4.16.2",
+    "typescript": "^5"
+  }
+}
