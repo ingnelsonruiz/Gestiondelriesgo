@@ -158,6 +158,27 @@ export async function validateValidadorFile(file: File, selectedIps: string, val
     }
 }
 
+async function logValidation(logEntry: ValidationLogEntry) {
+    const logDir = join(process.cwd(), 'public', 'uploads');
+    const logFilePath = join(logDir, 'bitacora_validaciones.json');
+
+    try {
+        await mkdir(logDir, { recursive: true });
+        let logs: ValidationLogEntry[] = [];
+        try {
+            await access(logFilePath);
+            const logFileContent = await readFile(logFilePath, 'utf-8');
+            logs = JSON.parse(logFileContent);
+        } catch (e) {
+            // Log file doesn't exist, will be created
+        }
+        logs.unshift(logEntry); // Add new entry to the beginning
+        await writeFile(logFilePath, JSON.stringify(logs, null, 2), 'utf-8');
+    } catch (error) {
+        console.error('Error al escribir en la bitácora de validaciones:', error);
+    }
+}
+
 async function consolidateFiles(year: string, month: string, validatorType: 'gestante' | 'rcv') {
     const monthDir = join(process.cwd(), 'public', 'uploads', validatorType, year, month);
     const consolidatedDir = join(process.cwd(), 'public', 'Mes consolidado', validatorType, year, month);
@@ -268,7 +289,6 @@ export async function uploadValidadorFile(formData: FormData) {
         } catch (rmError: any) {
             if (rmError.code !== 'ENOENT') {
                 console.error(`Could not delete file to be overwritten: ${rmError.message}`);
-                // Continue execution, maybe file was already deleted
             }
         }
     }
@@ -301,6 +321,16 @@ export async function uploadValidadorFile(formData: FormData) {
     await writeFile(path, buffer);
     
     await consolidateFiles(year, month, validatorType);
+    
+    // Log the successful validation
+    await logValidation({
+        timestamp: new Date().toISOString(),
+        ips,
+        fileName: file.name,
+        status: 'Cargado y Validado',
+        validatorType: formatValidatorType(validatorType),
+        periodo: `${month}/${year}`
+    });
 
     const publicPath = `/uploads/${validatorType}/${year}/${month}/${finalFileName}`;
 
@@ -350,7 +380,7 @@ export async function readDirectory(): Promise<any[]> {
                                             name: file,
                                             path: `/Mes consolidado/${validatorType}/${year}/${month}/${file}`,
                                             size: fileStat.size,
-                                            lastModified: fileStat.mtime.toLocaleString(),
+                                            lastModified: fileStat.mtime.toLocaleString('es-CO'),
                                             year,
                                             month,
                                             type: formatValidatorType(validatorType)
@@ -386,7 +416,7 @@ export async function readIndividualUploads(): Promise<any[]> {
         for (const validatorType of validatorTypes) {
              const validatorTypePath = join(baseDir, validatorType);
             const validatorTypeStat = await stat(validatorTypePath);
-            if(validatorTypeStat.isDirectory()){
+            if(validatorTypeStat.isDirectory() && validatorType !== 'bitacora_validaciones.json'){
                 const years = await readdir(validatorTypePath);
                 for (const year of years) {
                     const yearPath = join(validatorTypePath, year);
@@ -410,7 +440,7 @@ export async function readIndividualUploads(): Promise<any[]> {
                                             ips,
                                             path: `/uploads/${validatorType}/${year}/${month}/${file}`,
                                             size: fileStat.size,
-                                            lastModified: fileStat.mtime.toLocaleString(),
+                                            lastModified: fileStat.mtime.toLocaleString('es-CO'),
                                             year,
                                             month,
                                             type: formatValidatorType(validatorType)
@@ -431,4 +461,26 @@ export async function readIndividualUploads(): Promise<any[]> {
         }
     }
     return allFiles.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+}
+
+// --- Bitácora ---
+export interface ValidationLogEntry {
+    timestamp: string;
+    ips: string;
+    fileName: string;
+    status: string;
+    validatorType: string;
+    periodo: string;
+}
+
+export async function getValidationLog(): Promise<ValidationLogEntry[]> {
+    const logFilePath = join(process.cwd(), 'public', 'uploads', 'bitacora_validaciones.json');
+    try {
+        await access(logFilePath);
+        const logFileContent = await readFile(logFilePath, 'utf-8');
+        return JSON.parse(logFileContent);
+    } catch (e) {
+        // Log file doesn't exist, return empty array
+        return [];
+    }
 }

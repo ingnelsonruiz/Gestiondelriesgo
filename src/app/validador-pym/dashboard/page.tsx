@@ -1,14 +1,14 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Download, FolderIcon, Loader2, FileIcon, FileSpreadsheet } from 'lucide-react';
-import { readDirectory, readIndividualUploads } from '@/lib/validador-actions';
+import { ArrowLeft, Download, FolderIcon, Loader2, FileIcon, FileSpreadsheet, BookOpen } from 'lucide-react';
+import { readDirectory, readIndividualUploads, getValidationLog, ValidationLogEntry } from '@/lib/validador-actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -60,6 +60,95 @@ interface IndividualFileData {
             }[];
         }[];
     }[];
+}
+
+function BitacoraTab({ loading }: { loading: boolean }) {
+    const [logEntries, setLogEntries] = useState<ValidationLogEntry[]>([]);
+
+    useEffect(() => {
+        getValidationLog().then(setLogEntries);
+    }, []);
+
+    const handleExport = () => {
+        const dataToExport = logEntries.map(entry => ({
+            'Fecha y Hora': new Date(entry.timestamp).toLocaleString('es-CO'),
+            'IPS': entry.ips,
+            'Tipo de Validador': entry.validatorType,
+            'Periodo': entry.periodo,
+            'Nombre del Archivo': entry.fileName,
+            'Estado': entry.status,
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Bitácora de Validaciones");
+        
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const data = new Blob([excelBuffer], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8"});
+        saveAs(data, "bitacora_validaciones.xlsx");
+    };
+
+    if (loading && logEntries.length === 0) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    return (
+        <Card>
+            <CardHeader className='flex-row items-center justify-between'>
+                <div>
+                    <CardTitle>Bitácora de Validaciones</CardTitle>
+                    <CardDescription>
+                        Registro histórico de todos los archivos cargados y validados exitosamente.
+                    </CardDescription>
+                </div>
+                 <Button onClick={handleExport} disabled={logEntries.length === 0}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Exportar a Excel
+                </Button>
+            </CardHeader>
+            <CardContent>
+                {logEntries.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center shadow-sm">
+                        <BookOpen className="h-10 w-10 text-muted-foreground" />
+                        <p className="mt-4 font-medium">No hay registros en la bitácora</p>
+                        <p className="text-sm text-muted-foreground">
+                            Cuando se validen archivos exitosamente, los registros aparecerán aquí.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="max-h-[60vh] overflow-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Fecha y Hora</TableHead>
+                                    <TableHead>IPS</TableHead>
+                                    <TableHead>Validador</TableHead>
+                                    <TableHead>Periodo</TableHead>
+                                    <TableHead>Archivo</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {logEntries.map((entry, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell>{new Date(entry.timestamp).toLocaleString('es-CO')}</TableCell>
+                                        <TableCell>{entry.ips}</TableCell>
+                                        <TableCell>{entry.validatorType}</TableCell>
+                                        <TableCell>{entry.periodo}</TableCell>
+                                        <TableCell>{entry.fileName}</TableCell>
+                                        <TableCell className='text-green-600 font-medium'>{entry.status}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 }
 
 
@@ -415,11 +504,15 @@ function FileDashboardContent() {
                 </div>
             </div>
              
-             <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+             <Tabs defaultValue="bitacora" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="bitacora">Bitácora de Validaciones</TabsTrigger>
                     <TabsTrigger value="consolidated">Archivos Consolidados</TabsTrigger>
                     <TabsTrigger value="details">Detalle de Cargue</TabsTrigger>
                 </TabsList>
+                 <TabsContent value="bitacora">
+                   <BitacoraTab loading={loading} />
+                </TabsContent>
                 <TabsContent value="consolidated">
                    <ConsolidatedFilesTab fileTree={fileTree} loading={loading} />
                 </TabsContent>

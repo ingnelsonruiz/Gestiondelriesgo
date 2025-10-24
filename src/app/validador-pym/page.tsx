@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BookCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import GestanteValidator from '@/components/gestante-validator';
@@ -24,11 +24,19 @@ export default function ValidatorPage() {
           Validadores Dusakawi EPSI
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Seleccione el tipo de archivo que desea validar o revise el dashboard de cargues.
+          Seleccione el tipo de archivo que desea validar, revise el dashboard o consulte las reglas.
         </p>
-         <Link href="/validador-pym/dashboard" passHref>
-            <Button className="mt-4">Ir al Control de Cargue</Button>
-        </Link>
+         <div className="flex justify-center gap-4 mt-4">
+            <Button asChild>
+                <Link href="/validador-pym/dashboard">Ir al Control de Cargue</Link>
+            </Button>
+            <Button asChild variant="secondary">
+                <Link href="/validador-pym/malla-validadora">
+                    <BookCheck className="mr-2 h-4 w-4"/>
+                    Ver Malla Validadora
+                </Link>
+            </Button>
+        </div>
       </div>
       <Card>
         <Tabs defaultValue="gestante" className="w-full">
@@ -47,5 +55,3 @@ export default function ValidatorPage() {
     </div>
   );
 }
-
-    
