@@ -4,16 +4,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ServerCrash, CheckCircle, Link2, ArrowLeft } from 'lucide-react';
+import { Loader2, ServerCrash, CheckCircle, Link2 } from 'lucide-react';
 import { checkGoogleSheetConnection } from '../actions';
-import Link from 'next/link';
-import { IpsData } from '@/lib/sheets-checker';
 
 export default function GoogleSheetsCheckerPage() {
-  const [data, setData] = useState<IpsData[]>([]);
-  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -23,15 +18,11 @@ export default function GoogleSheetsCheckerPage() {
       setLoading(true);
       setError(null);
       setStatus('idle');
-      setData([]);
-      setCount(0);
 
       const result = await checkGoogleSheetConnection();
       
       if (result.success) {
         setStatus('success');
-        setData(result.data || []);
-        setCount(result.count || 0);
       } else {
         setStatus('error');
         setError(result.error || 'Ocurrió un error desconocido.');
@@ -59,7 +50,7 @@ export default function GoogleSheetsCheckerPage() {
         <CardHeader>
           <CardTitle>Diagnóstico de Google Sheets</CardTitle>
           <CardDescription>
-            Haga clic en el botón para verificar el acceso a la hoja de cálculo y ver una muestra de los datos.
+            Haga clic en el botón para verificar el acceso a la hoja de cálculo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -77,7 +68,7 @@ export default function GoogleSheetsCheckerPage() {
                 <CheckCircle className="h-4 w-4 !text-green-500" />
                 <AlertTitle className="text-green-700">¡Conexión Exitosa!</AlertTitle>
                 <AlertDescription>
-                    Se conectó correctamente a Google Sheets y se encontraron <strong>{count}</strong> filas de datos. Se muestran las primeras 5 filas.
+                    Se pudo establecer una conexión con la hoja de cálculo de Google Sheets.
                 </AlertDescription>
             </Alert>
           )}
@@ -88,25 +79,6 @@ export default function GoogleSheetsCheckerPage() {
               <AlertTitle>Error de Conexión</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
-          )}
-
-          {data.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{row.nombre}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
           )}
         </CardContent>
       </Card>

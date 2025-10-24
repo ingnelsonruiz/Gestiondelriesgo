@@ -5,8 +5,8 @@ import { obtenerDatosDeLaHoja } from '@/lib/sheets-checker';
 
 export async function checkGoogleSheetConnection() {
     try {
-        const data = await obtenerDatosDeLaHoja();
-        return { success: true, data: data.slice(0, 5), count: data.length }; // Devuelve las primeras 5 filas para verificación
+        const success = await obtenerDatosDeLaHoja();
+        return { success };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
