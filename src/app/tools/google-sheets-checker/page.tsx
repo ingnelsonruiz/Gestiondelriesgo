@@ -9,11 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ServerCrash, CheckCircle, Link2, ArrowLeft } from 'lucide-react';
 import { checkGoogleSheetConnection } from '../actions';
 import Link from 'next/link';
-
-interface IpsData {
-  ips: string;
-  [key: string]: any;
-}
+import { IpsData } from '@/lib/sheets-checker';
 
 export default function GoogleSheetsCheckerPage() {
   const [data, setData] = useState<IpsData[]>([]);
@@ -99,13 +95,13 @@ export default function GoogleSheetsCheckerPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>IPS</TableHead>
+                    <TableHead>Nombre</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data.map((row, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">{row.ips}</TableCell>
+                      <TableCell className="font-medium">{row.nombre}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -8,7 +8,7 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/17cIybY-8CfyV3Hg1JD0_E
 
 // Define una interfaz para la estructura de tus datos, basándote en las columnas de la hoja.
 export interface IpsData {
-  ips: string;
+  nombre: string;
   // Agrega aquí otras columnas si existen.
   [key: string]: any; 
 }
