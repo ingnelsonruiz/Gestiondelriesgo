@@ -175,7 +175,7 @@ export default function RcvValidator() {
             } else {
                 toast({
                     variant: 'destructive',
-                    title: `Se encontraron ${'\'\'\''}{result.errors.length} problemas`,
+                    title: `Se encontraron ${result.errors.length} problemas`,
                     description: 'Revisa el informe de validación para más detalles.',
                 });
             }
@@ -289,7 +289,7 @@ export default function RcvValidator() {
       if (result.success) {
         toast({
           title: fileToOverwrite ? 'Archivo Sobrescrito' : 'Archivo Cargado',
-          description: `El archivo ${'\'\'\''}{fileName} ha sido guardado exitosamente.`,
+          description: `El archivo ${fileName} ha sido guardado exitosamente.`,
         });
       } else {
         throw new Error(result.error);
@@ -346,14 +346,14 @@ export default function RcvValidator() {
           </CardHeader>
           <CardContent>
             <div
-              className={`flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors ${'\'\'\''}{selectedIps ? 'cursor-pointer hover:bg-accent/50' : 'cursor-not-allowed bg-muted/50'}`}
+              className={`flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors ${selectedIps ? 'cursor-pointer hover:bg-accent/50' : 'cursor-not-allowed bg-muted/50'}`}
               onClick={selectedIps ? handleAreaClick : undefined}
               onDragOver={(e) => {if(selectedIps) e.preventDefault()}}
               onDrop={selectedIps ? handleDrop : undefined}
             >
               <UploadCloud className="w-12 h-12 text-muted-foreground" />
               <p className="mt-4 text-sm text-center">
-                <span className={`font-semibold ${'\'\'\''}{selectedIps ? 'text-primary' : 'text-muted-foreground'}`}>
+                <span className={`font-semibold ${selectedIps ? 'text-primary' : 'text-muted-foreground'}`}>
                   Haz clic para subir
                 </span>{' '}
                 o arrastra y suelta
@@ -411,10 +411,10 @@ export default function RcvValidator() {
                     ) : 'Confirmar Carga'}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                    {fileToOverwrite ? 
-                        `Ya existe un archivo para ${'\'\'\''}{selectedIps} en ${'\'\'\''}{uploadInfo?.month}/${'\'\'\''}{uploadInfo?.year} (${'\'\'\''}{fileToOverwrite}). ¿Está seguro que desea reemplazarlo? Esta acción no se puede deshacer.` :
+                    {fileToOverwrite ?
+                        `Ya existe un archivo para la IPS "${selectedIps}" en el período ${uploadInfo?.month}/${uploadInfo?.year}. ¿Desea reemplazar el archivo existente (${fileToOverwrite})?` :
                         (uploadInfo ?
-                        `¿Está seguro que desea cargar el archivo para el mes de ${'\'\'\''}{uploadInfo.month} del año ${'\'\'\''}{uploadInfo.year}?` :
+                        `¿Está seguro que desea cargar el archivo para el mes de ${uploadInfo.month} del año ${uploadInfo.year}?` :
                         'No se pudo detectar el mes y el año del archivo. Se usará la fecha actual. ¿Desea continuar?')
                     }
                 </AlertDialogDescription>
