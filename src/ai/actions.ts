@@ -14,7 +14,6 @@ import {ProcessFileResponseSchema} from './schemas';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import {z} from 'zod';
-import { listModels as genkitListModels } from 'genkit';
 import { ModelReference } from 'genkit/ai';
 import { run } from '../../scripts/build-file-manifest';
 
@@ -102,12 +101,24 @@ const processFileBufferFlow = ai.defineFlow(
 
 
 export async function listModels(): Promise<ModelReference<any>[]> {
-    const models = await genkitListModels();
-    return models
-        .filter(m => m.name.startsWith('googleai/'))
-        .map(m => ({ ...m, name: m.name.replace('googleai/', '')}))
+    // Returning a static list as requested by the user to avoid service call errors.
+    const staticModels = [
+        { name: 'embedding-gecko-001', label: 'Embedding Gecko', supports: { generate: false, multiturn: false, tools: false, media: false } },
+        { name: 'gemini-1.5-flash-latest', label: 'Gemini 1.5 Flash', supports: { generate: true, multiturn: true, tools: true, media: true } },
+        { name: 'gemini-1.5-pro-latest', label: 'Gemini 1.5 Pro', supports: { generate: true, multiturn: true, tools: true, media: true } },
+        { name: 'gemini-pro', label: 'Gemini Pro', supports: { generate: true, multiturn: true, tools: false, media: false } },
+        { name: 'gemini-pro-vision', label: 'Gemini Pro Vision', supports: { generate: true, multiturn: true, tools: false, media: true } },
+        { name: 'text-embedding-004', label: 'Text Embedding 004', supports: { generate: false, multiturn: false, tools: false, media: false } },
+        { name: 'aqa', label: 'Attributed Question Answering', supports: { generate: true, multiturn: false, tools: false, media: false } },
+        { name: 'imagen-3.0-generate-002', label: 'Imagen 3.0', supports: { generate: true, multiturn: false, tools: false, media: false } },
+        { name: 'imagen-4.0-generate-preview-06-06', label: 'Imagen 4 (Preview)', supports: { generate: true, multiturn: false, tools: false, media: false } },
+    ];
+    
+    return staticModels
+        .map(m => ({ ...m, name: m.name, supports: m.supports, label: m.label || m.name }))
         .sort((a,b) => a.name.localeCompare(b.name));
 }
+
 
 const UploadFileSchema = z.object({
   fileDataUri: z.string(),

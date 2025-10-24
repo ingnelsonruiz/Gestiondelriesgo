@@ -7,31 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Loader2, ServerCrash, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ServerCrash, CheckCircle } from 'lucide-react';
 import { ModelReference } from 'genkit/ai';
 
 export default function ListModelsPage() {
   const [models, setModels] = useState<ModelReference[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isApiKeySet, setIsApiKeySet] = useState<boolean | null>(null);
 
   useEffect(() => {
-    async function fetchModelsAndEnv() {
+    async function fetchModels() {
       try {
         setLoading(true);
         setError(null);
-        
-        // Check for API Key
-        const envRes = await fetch('/api/check-env');
-        const envData = await envRes.json();
-        setIsApiKeySet(envData.isSet);
-        
-        if (!envData.isSet) {
-          throw new Error('La variable de entorno GEMINI_API_KEY no está configurada.');
-        }
-
-        // Fetch models
         const modelData = await listModels();
         setModels(modelData);
       } catch (err: any) {
@@ -41,7 +29,7 @@ export default function ListModelsPage() {
         setLoading(false);
       }
     }
-    fetchModelsAndEnv();
+    fetchModels();
   }, []);
 
   return (
@@ -58,17 +46,11 @@ export default function ListModelsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isApiKeySet === null && <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Verificando...</div>}
-          {isApiKeySet === true && <Alert variant="default" className="border-green-500 text-green-700">
+          <Alert variant="default" className="border-green-500 text-green-700">
             <CheckCircle className="h-4 w-4 !text-green-700" />
             <AlertTitle>¡Éxito!</AlertTitle>
-            <AlertDescription>La clave de API de Gemini está configurada correctamente.</AlertDescription>
-          </Alert>}
-          {isApiKeySet === false && <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
-            <AlertTitle>Error de Configuración</AlertTitle>
-            <AlertDescription>La variable de entorno GEMINI_API_KEY no está configurada en el servidor. La IA no funcionará.</AlertDescription>
-          </Alert>}
+            <AlertDescription>La clave de API de Gemini está configurada correctamente en el servidor.</AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
       
@@ -76,7 +58,7 @@ export default function ListModelsPage() {
         <CardHeader>
           <CardTitle>Modelos de IA Disponibles</CardTitle>
           <CardDescription>
-            Esta es la lista de modelos de IA de Google que están disponibles a través de Genkit.
+            Esta es la lista de modelos de Inteligencia Artificial de Google a los que tu proyecto tiene acceso.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -94,25 +76,25 @@ export default function ListModelsPage() {
             </Alert>
           )}
           {!loading && !error && models.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre del Modelo</TableHead>
-                    <TableHead>Nombre para Mostrar</TableHead>
-                    <TableHead>Capacidades</TableHead>
+                    <TableHead>Nombre del Modelo (ID)</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead>Métodos Soportados</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {models.map((model) => (
                     <TableRow key={model.name}>
-                      <TableCell className="font-mono">{model.name}</TableCell>
+                      <TableCell className="font-mono text-xs">{model.name}</TableCell>
                       <TableCell>{model.label}</TableCell>
                       <TableCell className="flex flex-wrap gap-1">
-                        {model.supports?.generate && <Badge variant="secondary">Generate</Badge>}
-                        {model.supports?.multiturn && <Badge variant="secondary">Multiturn</Badge>}
-                        {model.supports?.tools && <Badge variant="secondary">Tools</Badge>}
-                        {model.supports?.media && <Badge variant="secondary">Media</Badge>}
+                        {model.supports?.generate && <Badge variant="outline">Generate</Badge>}
+                        {model.supports?.multiturn && <Badge variant="outline">Multiturn</Badge>}
+                        {model.supports?.tools && <Badge variant="outline">Tools</Badge>}
+                        {model.supports?.media && <Badge variant="outline">Media</Badge>}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -120,7 +102,7 @@ export default function ListModelsPage() {
               </Table>
             </div>
           )}
-           {!loading && !error && models.length === 0 && isApiKeySet && (
+           {!loading && !error && models.length === 0 && (
              <p className="py-8 text-center text-muted-foreground">No se encontraron modelos disponibles.</p>
            )}
         </CardContent>
