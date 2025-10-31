@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ValidationReport } from '@/components/validation-report';
 import { Button } from '@/components/ui/button';
 import { validateFile, type ValidationError } from '@/app/validators/actions';
-import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 export function ModuloGestantes() {
   const [file, setFile] = useState<File | null>(null);
@@ -109,15 +109,16 @@ export function ModuloGestantes() {
       return;
     }
 
-    const csv = Papa.unparse(errors);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'reporte_de_errores_gestantes.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const dataToExport = errors.map(err => ({
+      'Ubicación': err.location,
+      'Tipo de Error': err.type,
+      'Descripción': err.description
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Errores');
+    XLSX.writeFile(workbook, 'reporte_de_errores_gestantes.xlsx');
   };
 
   return (
@@ -173,7 +174,7 @@ export function ModuloGestantes() {
                         disabled={!errors || errors.length === 0}
                     >
                         <Download className="mr-2 h-4 w-4" />
-                        Descargar Errores
+                        Descargar Errores (Excel)
                     </Button>
                     <Button onClick={handleDeleteFile} variant="destructive">
                         <XCircle className="mr-2 h-4 w-4" />
