@@ -1,3 +1,4 @@
+
 // src/lib/certificado-pdf.ts
 
 import type { Content } from 'pdfmake/interfaces';
@@ -131,8 +132,8 @@ export async function descargarCertificadoCargue(
 
   // Asignación correcta y segura de las fuentes (vfs)
   // Esta es la corrección definitiva.
-  if (pdfMake && pdfFonts) {
-    (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
+  if (pdfMake && pdfFonts && (pdfFonts as any).pdfMake) {
+    pdfMake.vfs = (pdfFonts as any).pdfMake.vfs;
   }
 
   const docDef = buildDocDefinition(data, images);
