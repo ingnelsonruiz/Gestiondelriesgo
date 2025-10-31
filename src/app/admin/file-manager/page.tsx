@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Trash2, Search, Package, PackageCheck, FileDown, RefreshCw } from 'lucide-react';
 import { listFilesForAdmin, downloadFilesAsZip, deleteFileForAdmin, type UploadedFile } from '../actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default function FileManagerPage() {
     const [files, setFiles] = useState<UploadedFile[]>([]);
