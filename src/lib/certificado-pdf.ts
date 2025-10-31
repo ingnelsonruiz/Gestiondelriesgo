@@ -131,8 +131,9 @@ export async function descargarCertificadoCargue(
   const pdfFonts = (await import('pdfmake/build/vfs_fonts')).default;
 
   // Asignación correcta y segura de las fuentes (vfs)
-  if (pdfMake) {
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+  // Esta es la corrección definitiva
+  if (pdfMake && pdfFonts) {
+    (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
   }
 
   const docDef = buildDocDefinition(data, images);
