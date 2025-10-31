@@ -2,6 +2,30 @@
   {
     "provider": "DUSAKAWI IPS",
     "action": "Subida de archivo: RCV",
+    "details": "Archivo: 2025/MARZO.xlsx",
+    "timestamp": "2025-10-31T20:20:36.625Z"
+  },
+  {
+    "action": "Admin: Añadir Usuario",
+    "provider": "ADMIN",
+    "details": "Añadido resguardo sokorpa",
+    "timestamp": "2025-10-31T20:11:03.601Z"
+  },
+  {
+    "provider": "DUSAKAWI IPS",
+    "action": "Subida de archivo: RCV",
+    "details": "Archivo: 2025/FEBRERO.xlsx",
+    "timestamp": "2025-10-31T19:45:52.043Z"
+  },
+  {
+    "provider": "DUSAKAWI IPS",
+    "action": "Subida de archivo: RCV",
+    "details": "Archivo: 2025/ENERO.xlsx",
+    "timestamp": "2025-10-31T19:35:39.077Z"
+  },
+  {
+    "provider": "DUSAKAWI IPS",
+    "action": "Subida de archivo: RCV",
     "details": "Archivo: 2025/ENERO.xlsx",
     "timestamp": "2025-10-31T19:24:21.558Z"
   },

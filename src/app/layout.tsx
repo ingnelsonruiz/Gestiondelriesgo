@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, BarChart3, PanelLeft, FileQuestion, Server, ShieldCheck, Link2, FileCheck2, LogOut, UserCog } from 'lucide-react';
+import { Home, BarChart3, PanelLeft, FileQuestion, Server, ShieldCheck, Link2, FileCheck2, LogOut, UserCog, FolderArchive } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Footer } from './footer';
@@ -80,14 +80,24 @@ export default async function RootLayout({
                                   </SidebarMenuButton>
                               </SidebarMenuItem>
                               {isAdmin && (
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton asChild tooltip="Administración">
-                                        <Link href="/admin">
-                                            <UserCog />
-                                            <span>Administración</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                <>
+                                  <SidebarMenuItem>
+                                      <SidebarMenuButton asChild tooltip="Administración">
+                                          <Link href="/admin">
+                                              <UserCog />
+                                              <span>Usuarios</span>
+                                          </Link>
+                                      </SidebarMenuButton>
+                                  </SidebarMenuItem>
+                                  <SidebarMenuItem>
+                                      <SidebarMenuButton asChild tooltip="Gestor de Archivos">
+                                          <Link href="/admin/file-manager">
+                                              <FolderArchive />
+                                              <span>Archivos</span>
+                                          </Link>
+                                      </SidebarMenuButton>
+                                  </SidebarMenuItem>
+                                </>
                               )}
                                <SidebarMenuItem>
                                   <SidebarMenuButton asChild tooltip="Diagnóstico IA">

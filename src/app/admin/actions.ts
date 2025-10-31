@@ -1,12 +1,15 @@
+
 'use server';
 
 import { getLocalProviders, Provider } from '@/lib/providers-local';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import Papa from 'papaparse';
+import JSZip from 'jszip';
 
 const PROVIDERS_FILE_PATH = path.join(process.cwd(), 'public', 'RCV', 'Prestadores.csv');
 const ACTIVITY_LOG_PATH = path.join(process.cwd(), 'public', 'activity-log.json');
+const VALIDATED_FILES_BASE_PATH = path.join(process.cwd(), 'public');
 
 export interface ProviderForAdmin {
   nit: string;
@@ -21,6 +24,16 @@ export interface ActivityLogEntry {
   action: string;
   details: string;
 }
+
+export interface UploadedFile {
+    path: string; // Relative to `public` folder
+    module: 'Gestantes' | 'RCV';
+    provider: string;
+    year: string;
+    month: string;
+    fileName: string;
+}
+
 
 // --- User Management (CRUD) ---
 
@@ -162,4 +175,78 @@ export async function logFileUpload(providerName: string, module: 'Fenix' | 'Ges
         action: `Subida de archivo: ${module}`,
         details: `Archivo: ${fileName}`,
     });
+}
+
+
+// --- File Management ---
+
+async function scanDirectory(startPath: string, module: 'Gestantes' | 'RCV'): Promise<UploadedFile[]> {
+  let results: UploadedFile[] = [];
+  try {
+    const departmentFolders = await fs.readdir(startPath, { withFileTypes: true });
+    for (const dpto of departmentFolders) {
+      if (!dpto.isDirectory()) continue;
+      const providerFolders = await fs.readdir(path.join(startPath, dpto.name), { withFileTypes: true });
+      for (const provider of providerFolders) {
+        if (!provider.isDirectory()) continue;
+        const yearFolders = await fs.readdir(path.join(startPath, dpto.name, provider.name), { withFileTypes: true });
+        for (const year of yearFolders) {
+          if (!year.isDirectory()) continue;
+          const monthFiles = await fs.readdir(path.join(startPath, dpto.name, provider.name, year.name), { withFileTypes: true });
+          for (const month of monthFiles) {
+            if (month.isFile() && month.name.toLowerCase().endsWith('.xlsx')) {
+              results.push({
+                module: module,
+                provider: provider.name,
+                year: year.name,
+                month: month.name.replace('.xlsx', ''),
+                fileName: month.name,
+                path: path.join(startPath.replace(VALIDATED_FILES_BASE_PATH, ''), dpto.name, provider.name, year.name, month.name).replace(/\\/g, '/'),
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (error: any) {
+    if (error.code !== 'ENOENT') console.error(`Error escaneando ${startPath}:`, error);
+  }
+  return results;
+}
+
+export async function listFilesForAdmin(): Promise<UploadedFile[]> {
+    const gestantesPath = path.join(VALIDATED_FILES_BASE_PATH, 'Validacion_Gestantes');
+    const rcvPath = path.join(VALIDATED_FILES_BASE_PATH, 'Validacion_Rcv');
+    
+    const gestantesFiles = await scanDirectory(gestantesPath, 'Gestantes');
+    const rcvFiles = await scanDirectory(rcvPath, 'RCV');
+
+    return [...gestantesFiles, ...rcvFiles].sort((a,b) => `${b.provider}-${b.year}-${b.month}`.localeCompare(`${a.provider}-${a.year}-${a.month}`));
+}
+
+export async function downloadFilesAsZip(filesToZip: { path: string, name: string }[]): Promise<string> {
+    const zip = new JSZip();
+    for (const file of filesToZip) {
+        try {
+            const filePath = path.join(VALIDATED_FILES_BASE_PATH, file.path);
+            const fileContent = await fs.readFile(filePath);
+            zip.file(file.name, fileContent);
+        } catch (error) {
+            console.error(`No se pudo añadir el archivo ${file.path} al ZIP:`, error);
+        }
+    }
+    const zipAsBase64 = await zip.generateAsync({ type: "base64" });
+    return zipAsBase64;
+}
+
+export async function deleteFileForAdmin(filePath: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        const fullPath = path.join(VALIDATED_FILES_BASE_PATH, filePath);
+        await fs.unlink(fullPath);
+        await writeActivityLog({ action: 'Admin: Eliminar Archivo', provider: 'ADMIN', details: `Archivo eliminado: ${filePath}` });
+        return { success: true };
+    } catch (error: any) {
+        console.error(`Error al eliminar archivo ${filePath}:`, error);
+        return { success: false, error: error.message };
+    }
 }

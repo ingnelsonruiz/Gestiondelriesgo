@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,10 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Clock, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Loader2, KeyRound, Clock, PlusCircle, Edit, Trash2, FolderArchive } from 'lucide-react';
 import { getUsers, addProvider, updateProvider, deleteProvider, getActivityLog, type ProviderForAdmin, type ActivityLogEntry } from './actions';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Link from 'next/link';
 
 type FormState = Omit<ProviderForAdmin, 'nit'> & { nit?: string };
 
@@ -133,18 +135,37 @@ export default function AdminPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold md:text-2xl">Panel de Administración</h1>
-                <Button onClick={() => handleOpenForm(null)}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Prestador
-                </Button>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                 <Link href="/admin/file-manager">
+                    <Card className="transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Gestión de Archivos</CardTitle>
+                        <FolderArchive className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                        <div className="text-2xl font-bold text-primary">Gestor de Archivos</div>
+                        <p className="text-xs text-muted-foreground pt-1">
+                            Administre los archivos subidos por los prestadores.
+                        </p>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Gestión de Prestadores</CardTitle>
-                    <CardDescription>
-                        Añada, edite o elimine los prestadores y sus claves de acceso.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Gestión de Prestadores</CardTitle>
+                        <CardDescription>
+                            Añada, edite o elimine los prestadores y sus claves de acceso.
+                        </CardDescription>
+                    </div>
+                     <Button onClick={() => handleOpenForm(null)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Añadir Prestador
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
