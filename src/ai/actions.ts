@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Server actions for data processing.
@@ -14,48 +15,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import {z} from 'zod';
 import { ModelReference } from 'genkit/ai';
-
-// Moved from scripts/build-file-manifest.ts to avoid Edge Runtime issues
-function findXlsxFiles(dir: string, baseDirForRelative: string): string[] {
-  if (!fs.existsSync(dir)) {
-    return [];
-  }
-
-  let results: string[] = [];
-  const list = fs.readdirSync(dir, { withFileTypes: true });
-
-  for (const file of list) {
-    const fullPath = path.join(dir, file.name);
-    if (file.isDirectory()) {
-      results = results.concat(findXlsxFiles(fullPath, baseDirForRelative));
-    } else if (file.isFile() && file.name.toLowerCase().endsWith(".xlsx")) {
-      results.push(path.relative(baseDirForRelative, fullPath).replace(/\\/g, '/'));
-    }
-  }
-  return results;
-}
-
-export function runFileManifestUpdate() {
-  const baseDir = path.join(process.cwd(), "public", "BASES DE DATOS");
-  const outPath = path.join(process.cwd(), "public", "bases-manifest.json");
-  const publicDir = path.join(process.cwd(), "public");
-
-  if (!fs.existsSync(baseDir)) {
-    console.warn("Advertencia: No se encontró la carpeta 'public/BASES DE DATOS'. Se generará un manifiesto vacío.");
-    
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
-    
-    fs.writeFileSync(outPath, JSON.stringify({ folder: "BASES DE DATOS", files: [] }, null, 2), "utf8");
-    return;
-  }
-  
-  const files = findXlsxFiles(baseDir, baseDir).sort();
-
-  fs.writeFileSync(outPath, JSON.stringify({ folder: "BASES DE DATOS", files }, null, 2), "utf8");
-  console.log(`Manifiesto generado: ${outPath} (${files.length} archivos)`);
-}
+import { runFileManifestUpdate } from '@/../scripts/build-file-manifest';
 
 
 export async function listFiles(): Promise<string[]> {

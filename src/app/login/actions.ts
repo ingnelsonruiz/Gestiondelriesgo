@@ -1,6 +1,6 @@
 'use server';
 
-import { getProviders } from '@/lib/providers-local'; // Se cambia la importación a la nueva función local
+import { getLocalProviders } from '@/lib/providers-local'; // Se cambia la importación a la nueva función local
 import { redirect } from 'next/navigation';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
@@ -38,7 +38,7 @@ export async function login(formData: FormData) {
   }
 
   try {
-    const providers = await getProviders();
+    const providers = await getLocalProviders();
     const user = providers.find(
       (p) => p.razonSocial.toUpperCase() === razonSocial.toUpperCase()
     );
