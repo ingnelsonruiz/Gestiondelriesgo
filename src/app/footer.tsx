@@ -41,7 +41,6 @@ export function Footer() {
             <ul className="space-y-2 text-gray-300">
               <li><Link href="/" className="hover:text-primary transition-colors">Inicio</Link></li>
               <li><Link href="/informes-fenix" className="hover:text-primary transition-colors">Informes Fenix</Link></li>
-              <li><Link href="/validador-pym" className="hover:text-primary transition-colors">Validador P Y M</Link></li>
               <li><Link href="/ayuda" className="hover:text-primary transition-colors">Ayuda</Link></li>
             </ul>
           </div>

@@ -56,14 +56,6 @@ export default function RootLayout({
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Validador P Y M">
-                                    <Link href="/validador-pym">
-                                        <ShieldCheck />
-                                        <span>Validador P Y M</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild tooltip="Diagnóstico IA">
                                     <Link href="/tools/list-models">
                                         <Server />

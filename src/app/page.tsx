@@ -78,22 +78,6 @@ export default function Home() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/validador-pym">
-          <Card className="transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Validador P Y M
-              </CardTitle>
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">Validador P Y M</div>
-              <p className="text-xs text-muted-foreground pt-1">
-                Valide la estructura de sus archivos de carga.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
          <Link href="/ayuda">
            <Card className="transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
