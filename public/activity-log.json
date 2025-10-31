@@ -1,5 +1,17 @@
 [
   {
+    "provider": "DUSAKAWI IPS",
+    "action": "Subida de archivo: Fenix",
+    "details": "Archivo: Inicio de Sesión",
+    "timestamp": "2025-10-31T21:15:01.107Z"
+  },
+  {
+    "provider": "ADMIN",
+    "action": "Subida de archivo: Fenix",
+    "details": "Archivo: Inicio de Sesión",
+    "timestamp": "2025-10-31T21:07:52.361Z"
+  },
+  {
     "provider": "ADMIN",
     "action": "Subida de archivo: Fenix",
     "details": "Archivo: Inicio de Sesión",
