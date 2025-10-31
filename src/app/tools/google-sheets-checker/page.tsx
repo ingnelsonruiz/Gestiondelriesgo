@@ -12,17 +12,20 @@ export default function GoogleSheetsCheckerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [rowCount, setRowCount] = useState<number>(0);
 
   const handleCheckConnection = async () => {
     try {
       setLoading(true);
       setError(null);
       setStatus('idle');
+      setRowCount(0);
 
       const result = await checkGoogleSheetConnection();
       
       if (result.success) {
         setStatus('success');
+        setRowCount(result.count || 0);
       } else {
         setStatus('error');
         setError(result.error || 'Ocurrió un error desconocido.');
@@ -50,7 +53,7 @@ export default function GoogleSheetsCheckerPage() {
         <CardHeader>
           <CardTitle>Diagnóstico de Google Sheets</CardTitle>
           <CardDescription>
-            Haga clic en el botón para verificar el acceso a la hoja de cálculo.
+            Haga clic en el botón para verificar el acceso y la correcta lectura de la hoja de cálculo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -66,9 +69,9 @@ export default function GoogleSheetsCheckerPage() {
           {status === 'success' && (
              <Alert variant="default" className="border-green-500">
                 <CheckCircle className="h-4 w-4 !text-green-500" />
-                <AlertTitle className="text-green-700">¡Conexión Exitosa!</AlertTitle>
+                <AlertTitle className="text-green-700">¡Conexión y Lectura Exitosa!</AlertTitle>
                 <AlertDescription>
-                    Se pudo establecer una conexión con la hoja de cálculo de Google Sheets.
+                    Se estableció la conexión y se leyeron correctamente <strong>{rowCount}</strong> filas de datos desde Google Sheets.
                 </AlertDescription>
             </Alert>
           )}
@@ -76,7 +79,7 @@ export default function GoogleSheetsCheckerPage() {
            {status === 'error' && (
             <Alert variant="destructive">
               <ServerCrash className="h-4 w-4" />
-              <AlertTitle>Error de Conexión</AlertTitle>
+              <AlertTitle>Error de Conexión o Lectura</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
