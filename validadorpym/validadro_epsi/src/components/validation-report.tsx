@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -13,13 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertTriangle, FileWarning } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, FileWarning, Download } from 'lucide-react';
+import type { ValidationError } from '@/app/validators/actions';
+import { Button } from './ui/button';
+import { saveAs } from 'file-saver';
 
-interface ValidationError {
-  location: string;
-  type: string;
-  description: string;
-}
 interface ValidationReportProps {
   errors: ValidationError[] | null;
   isLoading: boolean;
@@ -29,6 +28,20 @@ export function ValidationReport({
   errors,
   isLoading,
 }: ValidationReportProps) {
+  
+  const handleExport = () => {
+    if (!errors || errors.length === 0) return;
+
+    const csvHeader = '"Ubicación","Tipo de Error","Descripción"\n';
+    const csvRows = errors.map(e => 
+      `"${e.location}","${e.type}","${e.description.replace(/"/g, '""')}"`
+    ).join('\n');
+
+    const csvContent = csvHeader + csvRows;
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'reporte_de_errores.csv');
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-12 text-center shadow-sm">
@@ -71,7 +84,7 @@ export function ValidationReport({
 
   return (
     <Card className="border-destructive">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-start justify-between">
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <div>
@@ -81,6 +94,10 @@ export function ValidationReport({
             </CardDescription>
           </div>
         </div>
+        <Button onClick={handleExport} variant="outline">
+          <Download className="mr-2 h-4 w-4" />
+          Exportar a CSV
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="max-h-96 overflow-auto">
