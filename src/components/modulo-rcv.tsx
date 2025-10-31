@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useRef, type ChangeEvent, useEffect } from 'react';
+import React, { useState, useRef, type ChangeEvent, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { File as FileIcon, UploadCloud, XCircle, Download, Upload } from 'lucide-react';
+import { File as FileIcon, UploadCloud, XCircle, Download, Upload, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ValidationReport } from '@/components/validation-report';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,7 @@ export function ModuloRcv() {
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
   const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1));
   const [isUploading, setIsUploading] = useState(false);
+  const [providerSearch, setProviderSearch] = useState('');
 
   useEffect(() => {
     async function fetchProviders() {
@@ -54,6 +54,10 @@ export function ModuloRcv() {
     fetchProviders();
   }, [toast]);
   
+  const filteredProviders = useMemo(() => {
+    if (!providerSearch) return providers;
+    return providers.filter(p => p.razonSocial.toLowerCase().includes(providerSearch.toLowerCase()));
+  }, [providers, providerSearch]);
 
   const processFile = async (selectedFile: File) => {
      if (!selectedProvider) {
@@ -216,17 +220,36 @@ export function ModuloRcv() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
+                <div className="grid gap-2 md:col-span-3">
+                     <Label htmlFor="provider-search-rcv">Buscar Prestador (IPS)</Label>
+                     <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            id="provider-search-rcv"
+                            placeholder="Escribe para buscar..."
+                            value={providerSearch}
+                            onChange={(e) => setProviderSearch(e.target.value)}
+                            className="pl-8"
+                            disabled={!!file}
+                        />
+                    </div>
+                </div>
+
                 <div className="grid gap-2">
-                    <Label htmlFor="provider-select-rcv">Prestador (IPS)</Label>
+                    <Label htmlFor="provider-select-rcv">Seleccionar Prestador (IPS)</Label>
                     <Select value={selectedProvider} onValueChange={setSelectedProvider} disabled={!!file}>
                         <SelectTrigger id="provider-select-rcv">
                             <SelectValue placeholder="Seleccione un prestador..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {providers.map(p => (
-                                <SelectItem key={p.nit} value={p.nit}>{p.razonSocial} ({p.departamento})</SelectItem>
-                            ))}
+                            {filteredProviders.length > 0 ? (
+                                filteredProviders.map(p => (
+                                    <SelectItem key={p.nit} value={p.nit}>{p.razonSocial} ({p.departamento})</SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="no-results" disabled>No se encontraron prestadores</SelectItem>
+                            )}
                         </SelectContent>
                     </Select>
                 </div>
@@ -328,5 +351,3 @@ export function ModuloRcv() {
     </div>
   );
 }
-
-    
