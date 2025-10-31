@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart3, Info, FileQuestion, Server, ShieldCheck } from "lucide-react";
+import { BarChart3, Info, FileQuestion, Server, ShieldCheck, FileCheck2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +49,7 @@ export default function Home() {
                     </li>
                      <li>
                         <b>Navegación:</b>
-                        <p>Use el menú lateral para navegar entre el panel principal y el módulo de informes "Fenix".</p>
+                        <p>Use el menú lateral para navegar entre las distintas herramientas y módulos.</p>
                     </li>
                 </ul>
             </div>
@@ -74,6 +74,38 @@ export default function Home() {
               <div className="text-2xl font-bold text-primary">Informes Fenix</div>
               <p className="text-xs text-muted-foreground pt-1">
                 Análisis y visualización de indicadores HTA y DM.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+         <Link href="/modulo-gestantes">
+           <Card className="transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Validación
+              </CardTitle>
+              <FileCheck2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">Módulo Gestantes</div>
+              <p className="text-xs text-muted-foreground pt-1">
+                Validador de archivos para data de gestantes.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+         <Link href="/modulo-rcv">
+           <Card className="transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Validación
+              </CardTitle>
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">Módulo RCV</div>
+              <p className="text-xs text-muted-foreground pt-1">
+                Validador de archivos para data de RCV.
               </p>
             </CardContent>
           </Card>

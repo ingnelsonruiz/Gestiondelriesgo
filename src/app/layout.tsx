@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, BarChart3, PanelLeft, FileQuestion, Server, ShieldCheck, Link2 } from 'lucide-react';
+import { Home, BarChart3, PanelLeft, FileQuestion, Server, ShieldCheck, Link2, FileCheck2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Footer } from './footer';
@@ -52,6 +52,22 @@ export default function RootLayout({
                                     <Link href="/informes-fenix">
                                         <BarChart3 />
                                         <span>Informes Fenix</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Módulo Gestantes">
+                                    <Link href="/modulo-gestantes">
+                                        <FileCheck2 />
+                                        <span>Módulo Gestantes</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Módulo RCV">
+                                    <Link href="/modulo-rcv">
+                                        <ShieldCheck />
+                                        <span>Módulo RCV</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
