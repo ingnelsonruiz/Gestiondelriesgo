@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Loader2, CheckCircle2, AlertTriangle, FileWarning, Download } from 'lucide-react';
-import type { ValidationError } from '@/app/validators/actions';
+import type { ValidationError } from '@/app/actions';
 import { Button } from './ui/button';
 import { saveAs } from 'file-saver';
 
