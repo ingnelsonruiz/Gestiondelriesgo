@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { getProviders, Provider } from '@/lib/providers';
 import { Loader2 } from 'lucide-react';
+import { descargarCertificadoCargue } from '@/lib/certificado-pdf';
+import { loadImageAsBase64 } from '@/lib/image-loader';
 
 
 export function ModuloRcv() {
@@ -187,6 +189,15 @@ export function ModuloRcv() {
         title: '¡Éxito!',
         description: `El archivo validado para ${provider.razonSocial} ha sido guardado.`,
       });
+
+       // Generar y descargar el certificado
+      const backgroundImg = await loadImageAsBase64('imagenes pdf/pdf.jpg');
+      await descargarCertificadoCargue({
+          providerName: provider.razonSocial,
+          module: 'RCV',
+          fileName: file.name,
+          timestamp: new Date()
+      }, { background: backgroundImg });
 
     } catch (error: any) {
       console.error('Error al subir el archivo:', error);

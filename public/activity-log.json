@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "action": "Admin: Añadir Usuario",
+    "provider": "ADMIN",
+    "details": "Añadido DUSAKAWI IPS",
+    "timestamp": "2025-10-31T18:59:44.362Z"
+  },
+  {
+    "action": "Admin: Eliminar Usuario",
+    "provider": "ADMIN",
+    "details": "Eliminado prestador con NIT 901476155",
+    "timestamp": "2025-10-31T18:54:53.577Z"
+  },
+  {
+    "action": "Admin: Actualizar Usuario",
+    "provider": "ADMIN",
+    "details": "Actualizado IPSI KOTTUSHI SAO ANA",
+    "timestamp": "2025-10-31T18:54:37.242Z"
+  }
+]
