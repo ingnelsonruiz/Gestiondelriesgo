@@ -1,6 +1,6 @@
 'use server';
 
-import { getProviders } from '@/lib/providers';
+import { getProviders } from '@/lib/providers-local'; // Se cambia la importación a la nueva función local
 import { redirect } from 'next/navigation';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
@@ -79,5 +79,5 @@ export async function getSession() {
       return null;
   }
   
-  return decryptedSession.user as (import('@/lib/providers').Provider);
+  return decryptedSession.user as (import('@/lib/providers-local').Provider);
 }

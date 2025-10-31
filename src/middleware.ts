@@ -39,5 +39,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Coincidir con todas las rutas excepto las rutas de la API, RPC, etc.
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|imagenes).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|imagenes|RCV|BASES DE DATOS|Poblacion 2025.csv).*)'],
 };

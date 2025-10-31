@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server actions for data processing.
@@ -12,18 +11,59 @@ import {ai} from '@/ai/genkit';
 import {DataProcessingResult, processDataFile} from '@/lib/data-processing';
 import {ProcessFileResponseSchema} from './schemas';
 import * as path from 'path';
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
 import {z} from 'zod';
 import { ModelReference } from 'genkit/ai';
-import { run } from '../../scripts/build-file-manifest';
+
+// Moved from scripts/build-file-manifest.ts to avoid Edge Runtime issues
+function findXlsxFiles(dir: string, baseDirForRelative: string): string[] {
+  if (!fs.existsSync(dir)) {
+    return [];
+  }
+
+  let results: string[] = [];
+  const list = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const file of list) {
+    const fullPath = path.join(dir, file.name);
+    if (file.isDirectory()) {
+      results = results.concat(findXlsxFiles(fullPath, baseDirForRelative));
+    } else if (file.isFile() && file.name.toLowerCase().endsWith(".xlsx")) {
+      results.push(path.relative(baseDirForRelative, fullPath).replace(/\\/g, '/'));
+    }
+  }
+  return results;
+}
+
+export function runFileManifestUpdate() {
+  const baseDir = path.join(process.cwd(), "public", "BASES DE DATOS");
+  const outPath = path.join(process.cwd(), "public", "bases-manifest.json");
+  const publicDir = path.join(process.cwd(), "public");
+
+  if (!fs.existsSync(baseDir)) {
+    console.warn("Advertencia: No se encontró la carpeta 'public/BASES DE DATOS'. Se generará un manifiesto vacío.");
+    
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    
+    fs.writeFileSync(outPath, JSON.stringify({ folder: "BASES DE DATOS", files: [] }, null, 2), "utf8");
+    return;
+  }
+  
+  const files = findXlsxFiles(baseDir, baseDir).sort();
+
+  fs.writeFileSync(outPath, JSON.stringify({ folder: "BASES DE DATOS", files }, null, 2), "utf8");
+  console.log(`Manifiesto generado: ${outPath} (${files.length} archivos)`);
+}
 
 
 export async function listFiles(): Promise<string[]> {
     const manifestPath = path.join(process.cwd(), 'public', 'bases-manifest.json');
 
     try {
-        run(); // Regenerate manifest before reading
-        const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+        runFileManifestUpdate(); // Regenerate manifest before reading
+        const manifestContent = await fs.promises.readFile(manifestPath, 'utf-8');
         const data = JSON.parse(manifestContent);
         return Array.isArray(data.files) ? data.files : [];
     } catch (error: any) {
@@ -40,13 +80,11 @@ export async function listFiles(): Promise<string[]> {
 export async function processSelectedFile(fileName: string, year: number, month: number): Promise<DataProcessingResult> {
     
     const baseUrl = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    // La ruta del archivo ahora puede contener subdirectorios, así que la dividimos y la codificamos
     const encodedPathParts = fileName.split('/').map(part => encodeURIComponent(part));
     const encodedFileName = encodedPathParts.join('/');
     const fileUrl = `${baseUrl}/BASES%20DE%20DATOS/${encodedFileName}`;
 
     try {
-        // En el entorno del servidor de Next.js, necesitamos una URL absoluta para `fetch`
         const internalUrl = new URL(fileUrl, 'http://localhost:9002');
         const res = await fetch(internalUrl, { cache: 'no-store' });
 
@@ -58,7 +96,7 @@ export async function processSelectedFile(fileName: string, year: number, month:
 
         return await processFileBufferFlow({
             fileBuffer,
-            fileName: path.basename(fileName), // Pasamos solo el nombre del archivo para mantener la lógica original
+            fileName: path.basename(fileName),
             year,
             month
         });
@@ -70,7 +108,6 @@ export async function processSelectedFile(fileName: string, year: number, month:
 }
 
 
-// Reusable flow for processing a file buffer
 const processFileBufferFlow = ai.defineFlow(
   {
     name: 'processFileBufferFlow',
@@ -101,7 +138,6 @@ const processFileBufferFlow = ai.defineFlow(
 
 
 export async function listModels(): Promise<ModelReference<any>[]> {
-    // Returning a static list as requested by the user to avoid service call errors.
     const staticModels = [
         { name: 'embedding-gecko-001', label: 'Embedding Gecko', supports: { generate: false, multiturn: false, tools: false, media: false } },
         { name: 'gemini-1.5-flash-latest', label: 'Gemini 1.5 Flash', supports: { generate: true, multiturn: true, tools: true, media: true } },
@@ -139,17 +175,13 @@ export const uploadFile = ai.defineFlow(
     const filePath = path.join(yearDir, fileName);
 
     try {
-      // Create year directory if it doesn't exist
-      await fs.mkdir(yearDir, { recursive: true });
+      await fs.promises.mkdir(yearDir, { recursive: true });
 
-      // Convert data URI to buffer
       const buffer = Buffer.from(fileDataUri.split(',')[1], 'base64');
 
-      // Write file to disk
-      await fs.writeFile(filePath, buffer);
+      await fs.promises.writeFile(filePath, buffer);
       
-      // Re-run the manifest script
-      run();
+      runFileManifestUpdate();
 
       return { success: true, path: filePath };
     } catch (error: any) {
