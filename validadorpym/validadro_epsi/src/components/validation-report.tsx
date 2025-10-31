@@ -1,4 +1,7 @@
 
+"use client"
+
+import * as React from 'react';
 import {
   Card,
   CardContent,
@@ -14,9 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertTriangle, FileWarning, Download } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, FileWarning } from 'lucide-react';
 import type { ValidationError } from '@/app/actions';
-import { Button } from './ui/button';
 import { saveAs } from 'file-saver';
 
 interface ValidationReportProps {
@@ -28,8 +30,8 @@ export function ValidationReport({
   errors,
   isLoading,
 }: ValidationReportProps) {
-  
-  const handleExport = () => {
+
+  const handleExport = React.useCallback(() => {
     if (!errors || errors.length === 0) return;
 
     const csvHeader = '"Ubicación","Tipo de Error","Descripción"\n';
@@ -40,7 +42,13 @@ export function ValidationReport({
     const csvContent = csvHeader + csvRows;
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, 'reporte_de_errores.csv');
-  };
+  }, [errors]);
+
+  React.useEffect(() => {
+    if (errors && errors.length > 0) {
+      handleExport();
+    }
+  }, [errors, handleExport]);
 
   if (isLoading) {
     return (
@@ -84,20 +92,16 @@ export function ValidationReport({
 
   return (
     <Card className="border-destructive">
-      <CardHeader className="flex flex-row items-start justify-between">
+      <CardHeader>
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <div>
             <CardTitle>Informe de Validación</CardTitle>
             <CardDescription>
-              Se encontraron {errors.length} errores en el archivo.
+              Se encontraron {errors.length} errores. El reporte se ha descargado automáticamente.
             </CardDescription>
           </div>
         </div>
-        <Button onClick={handleExport} variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Exportar a CSV
-        </Button>
       </CardHeader>
       <CardContent>
         <div className="max-h-96 overflow-auto">
