@@ -51,5 +51,3 @@ export async function getProviders(): Promise<Provider[]> {
     throw new Error(`No se pudo conectar con la base de datos de prestadores. ${error.message}`);
   }
 }
-
-    
