@@ -56,10 +56,10 @@ export function ValidationReport({
         <CardContent className="p-8 text-center">
           <CheckCircle2 className="mx-auto h-16 w-16 text-green-500 mb-4" />
           <h3 className="text-2xl font-semibold font-headline">
-            Validación Exitosa
+            Archivo Válido
           </h3>
           <p className="text-muted-foreground mt-2">
-            Tu archivo ha sido validado y no se encontraron errores.
+            Tu archivo ha sido validado correctamente y está listo para su envío.
           </p>
         </CardContent>
       </Card>
