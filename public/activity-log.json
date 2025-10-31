@@ -1,6 +1,18 @@
 [
   {
     "provider": "DUSAKAWI IPS",
+    "action": "Subida de archivo: RCV",
+    "details": "Archivo: 2025/ABRIL.xlsx",
+    "timestamp": "2025-10-31T21:22:39.163Z"
+  },
+  {
+    "provider": "DUSAKAWI IPS",
+    "action": "Subida de archivo: Fenix",
+    "details": "Archivo: Inicio de Sesión",
+    "timestamp": "2025-10-31T21:22:00.469Z"
+  },
+  {
+    "provider": "DUSAKAWI IPS",
     "action": "Subida de archivo: Fenix",
     "details": "Archivo: Inicio de Sesión",
     "timestamp": "2025-10-31T21:15:01.107Z"

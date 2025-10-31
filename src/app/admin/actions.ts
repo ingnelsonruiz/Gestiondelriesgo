@@ -32,6 +32,7 @@ export interface UploadedFile {
     year: string;
     month: string;
     fileName: string;
+    timestamp: string; // ISO string for the upload date
 }
 
 
@@ -181,38 +182,42 @@ export async function logFileUpload(providerName: string, module: 'Fenix' | 'Ges
 // --- File Management ---
 
 async function scanDirectory(startPath: string, module: 'Gestantes' | 'RCV'): Promise<UploadedFile[]> {
-  let results: UploadedFile[] = [];
-  try {
-    const departmentFolders = await fs.readdir(startPath, { withFileTypes: true });
-    for (const dpto of departmentFolders) {
-      if (!dpto.isDirectory()) continue;
-      const providerFolders = await fs.readdir(path.join(startPath, dpto.name), { withFileTypes: true });
-      for (const provider of providerFolders) {
-        if (!provider.isDirectory()) continue;
-        const yearFolders = await fs.readdir(path.join(startPath, dpto.name, provider.name), { withFileTypes: true });
-        for (const year of yearFolders) {
-          if (!year.isDirectory()) continue;
-          const monthFiles = await fs.readdir(path.join(startPath, dpto.name, provider.name, year.name), { withFileTypes: true });
-          for (const month of monthFiles) {
-            if (month.isFile() && month.name.toLowerCase().endsWith('.xlsx')) {
-              results.push({
-                module: module,
-                provider: provider.name,
-                year: year.name,
-                month: month.name.replace('.xlsx', ''),
-                fileName: month.name,
-                path: path.join(startPath.replace(VALIDATED_FILES_BASE_PATH, ''), dpto.name, provider.name, year.name, month.name).replace(/\\/g, '/'),
-              });
+    let results: UploadedFile[] = [];
+    try {
+        const departmentFolders = await fs.readdir(startPath, { withFileTypes: true });
+        for (const dpto of departmentFolders) {
+            if (!dpto.isDirectory()) continue;
+            const providerFolders = await fs.readdir(path.join(startPath, dpto.name), { withFileTypes: true });
+            for (const provider of providerFolders) {
+                if (!provider.isDirectory()) continue;
+                const yearFolders = await fs.readdir(path.join(startPath, dpto.name, provider.name), { withFileTypes: true });
+                for (const year of yearFolders) {
+                    if (!year.isDirectory()) continue;
+                    const monthFiles = await fs.readdir(path.join(startPath, dpto.name, provider.name, year.name), { withFileTypes: true });
+                    for (const month of monthFiles) {
+                        if (month.isFile() && month.name.toLowerCase().endsWith('.xlsx')) {
+                            const fullPath = path.join(startPath, dpto.name, provider.name, year.name, month.name);
+                            const stats = await fs.stat(fullPath);
+                            results.push({
+                                module: module,
+                                provider: provider.name,
+                                year: year.name,
+                                month: month.name.replace('.xlsx', ''),
+                                fileName: month.name,
+                                path: path.join(startPath.replace(VALIDATED_FILES_BASE_PATH, ''), dpto.name, provider.name, year.name, month.name).replace(/\\/g, '/'),
+                                timestamp: stats.mtime.toISOString(),
+                            });
+                        }
+                    }
+                }
             }
-          }
         }
-      }
+    } catch (error: any) {
+        if (error.code !== 'ENOENT') console.error(`Error escaneando ${startPath}:`, error);
     }
-  } catch (error: any) {
-    if (error.code !== 'ENOENT') console.error(`Error escaneando ${startPath}:`, error);
-  }
-  return results;
+    return results;
 }
+
 
 export async function listFilesForAdmin(): Promise<UploadedFile[]> {
     const gestantesPath = path.join(VALIDATED_FILES_BASE_PATH, 'Validacion_Gestantes');
@@ -221,7 +226,7 @@ export async function listFilesForAdmin(): Promise<UploadedFile[]> {
     const gestantesFiles = await scanDirectory(gestantesPath, 'Gestantes');
     const rcvFiles = await scanDirectory(rcvPath, 'RCV');
 
-    return [...gestantesFiles, ...rcvFiles].sort((a,b) => `${b.provider}-${b.year}-${b.month}`.localeCompare(`${a.provider}-${a.year}-${a.month}`));
+    return [...gestantesFiles, ...rcvFiles].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 export async function downloadFilesAsZip(filesToZip: { path: string, name: string }[]): Promise<string> {

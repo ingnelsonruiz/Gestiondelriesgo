@@ -13,6 +13,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function FileManagerPage() {
     const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -174,6 +176,7 @@ export default function FileManagerPage() {
                                         </TableHead>
                                         <TableHead>Módulo</TableHead>
                                         <TableHead>Prestador</TableHead>
+                                        <TableHead>Fecha de Cargue</TableHead>
                                         <TableHead>Año</TableHead>
                                         <TableHead>Mes</TableHead>
                                         <TableHead>Nombre Archivo</TableHead>
@@ -194,6 +197,9 @@ export default function FileManagerPage() {
                                                 <Badge variant={file.module === 'Gestantes' ? 'secondary' : 'outline'}>{file.module}</Badge>
                                             </TableCell>
                                             <TableCell className="font-medium">{file.provider}</TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                                {format(new Date(file.timestamp), "d 'de' LLLL, h:mm a", { locale: es })}
+                                            </TableCell>
                                             <TableCell>{file.year}</TableCell>
                                             <TableCell>{file.month}</TableCell>
                                             <TableCell>{file.fileName}</TableCell>
@@ -230,7 +236,7 @@ export default function FileManagerPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
+                                            <TableCell colSpan={8} className="h-24 text-center">
                                                 No se encontraron archivos.
                                             </TableCell>
                                         </TableRow>
