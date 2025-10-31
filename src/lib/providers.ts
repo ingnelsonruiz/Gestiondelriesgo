@@ -11,6 +11,7 @@ export interface Provider {
   nit: string;
   razonSocial: string;
   departamento: string;
+  clave: string;
 }
 
 export async function getProviders(): Promise<Provider[]> {
@@ -32,7 +33,8 @@ export async function getProviders(): Promise<Provider[]> {
           const providers: Provider[] = results.data.map(row => ({
             nit: row.nit,
             razonSocial: row.razonsocial,
-            departamento: row.departamento
+            departamento: row.departamento,
+            clave: row.clave // Añadimos la clave
           })).filter(p => p.nit && p.razonSocial && p.departamento);
 
           resolve(providers);
