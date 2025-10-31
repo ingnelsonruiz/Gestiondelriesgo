@@ -1,3 +1,4 @@
+
 // src/lib/certificado-pdf.ts
 
 import type { Content } from 'pdfmake/interfaces';
@@ -127,8 +128,12 @@ export async function descargarCertificadoCargue(
 ) {
   // Import dinámico para evitar problemas de SSR en Next/Firebase Studio
   const pdfMake = (await import('pdfmake/build/pdfmake')).default;
-  const vfsFonts = (await import('pdfmake/build/vfs_fonts')).default;
-  (pdfMake as any).vfs = vfsFonts.pdfMake.vfs;
+  const pdfFonts = (await import('pdfmake/build/vfs_fonts')).default;
+
+  // Asignación correcta y segura de las fuentes (vfs)
+  if (pdfMake && pdfFonts) {
+    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+  }
 
   const docDef = buildDocDefinition(data, images);
   const fileName = `Certificado_${data.module}_${data.providerName.replace(/\s+/g, '_')}.pdf`;
