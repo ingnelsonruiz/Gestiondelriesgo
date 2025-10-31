@@ -146,7 +146,9 @@ export const uploadFile = ai.defineFlow(
       runFileManifestUpdate();
       
       const session = await getSession();
-      await logFileUpload(session?.razonSocial || 'Desconocido', 'Fenix', fileName);
+      if (session) {
+        await logFileUpload(session.razonSocial, 'Fenix', fileName);
+      }
 
       return { success: true, path: filePath };
     } catch (error: any) {

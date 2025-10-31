@@ -16,7 +16,6 @@ export async function middleware(request: NextRequest) {
 
   // Si no hay sesión y la ruta no es pública, redirigir a login
   if (!session) {
-    console.log(`No session found for path: ${path}. Redirecting to login.`);
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -29,7 +28,6 @@ export async function middleware(request: NextRequest) {
   // Si es la ruta de admin, verificar que el usuario sea ADMIN
   if (path.startsWith('/admin')) {
       if (session.razonSocial.toUpperCase() !== 'ADMIN') {
-        console.log(`User ${session.razonSocial} tried to access admin page. Redirecting to home.`);
         return NextResponse.redirect(new URL('/', request.url));
       }
   }

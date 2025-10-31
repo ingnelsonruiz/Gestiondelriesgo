@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Footer } from './footer';
 import Image from 'next/image';
-import { getSession, logout } from './login/actions';
+import { logout } from './login/actions';
+import { getSession } from './login/session';
 
 const fontSans = FontSans({ 
   subsets: ["latin"],

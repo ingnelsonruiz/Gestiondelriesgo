@@ -3,7 +3,8 @@
 import { getLocalProviders } from '@/lib/providers-local';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { encrypt, decrypt } from './session';
+import { encrypt } from './session';
+import { logFileUpload } from '@/app/admin/actions';
 
 export async function login(formData: FormData) {
   const razonSocial = formData.get('razonSocial')?.toString();
@@ -30,6 +31,9 @@ export async function login(formData: FormData) {
     // Save the session in a cookie
     cookies().set('session', session, { expires, httpOnly: true });
     
+    // Log login activity
+    await logFileUpload(user.razonSocial, 'Fenix', 'Inicio de Sesión');
+
     return { success: true, user: { nit: user.nit, razonSocial: user.razonSocial } };
 
   } catch (error: any) {
@@ -42,18 +46,4 @@ export async function login(formData: FormData) {
 export async function logout() {
   cookies().set('session', '', { expires: new Date(0) });
   redirect('/login');
-}
-
-export async function getSession() {
-  const sessionCookie = cookies().get('session')?.value;
-  if (!sessionCookie) return null;
-  
-  const decryptedSession = await decrypt(sessionCookie);
-  if (!decryptedSession || new Date(decryptedSession.expires) < new Date()) {
-      // Borrar cookie expirada
-      cookies().set('session', '', { expires: new Date(0) });
-      return null;
-  }
-  
-  return decryptedSession.user as (import('@/lib/providers-local').Provider);
 }

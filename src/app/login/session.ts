@@ -21,7 +21,7 @@ export async function decrypt(input: string): Promise<any> {
     });
     return payload;
   } catch (e) {
-    console.error('Failed to decrypt session:', e);
+    // console.error('Failed to decrypt session:', e);
     return null;
   }
 }
