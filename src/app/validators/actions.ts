@@ -4,6 +4,7 @@
 import * as XLSX from 'xlsx';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { logFileUpload } from '../admin/actions';
 
 const VALID_MUNICIPIOS_GESTANTE = [
     "CODAZZI", "BECERRIL", "VALLEDUPAR", "LA PAZ", "CHIMICHAGUA", "SANTA MARTA",
@@ -213,7 +214,7 @@ export async function validateFile(file: File, validatorType: 'gestante' | 'rcv'
 }
 
 export interface SaveValidatedFilePayload {
-    fileDataUri: string;
+    file: File;
     provider: {
         nit: string;
         razonSocial: string;
@@ -225,7 +226,7 @@ export interface SaveValidatedFilePayload {
 }
 
 export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
-    const { fileDataUri, provider, year, month, module } = payload;
+    const { file, provider, year, month, module } = payload;
     
     const NORM = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
@@ -242,9 +243,12 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
     try {
         await fs.mkdir(yearDir, { recursive: true });
 
-        const buffer = Buffer.from(fileDataUri.split(',')[1], 'base64');
+        const buffer = Buffer.from(await file.arrayBuffer());
 
         await fs.writeFile(filePath, buffer);
+        
+        // Log activity
+        await logFileUpload(provider.razonSocial, module, `${year}/${fileName}`);
 
         return { success: true, path: filePath };
     } catch (error: any) {
@@ -252,5 +256,3 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
         throw new Error(`No se pudo guardar el archivo en el servidor. Detalles: ${error.message}`);
     }
 }
-
-    

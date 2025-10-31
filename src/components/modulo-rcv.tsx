@@ -33,7 +33,7 @@ export function ModuloRcv() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
-  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1));
+  const [selectedMonth, setSelectedMonth] = useState<string>('ENERO');
   const [isUploading, setIsUploading] = useState(false);
   const [providerSearch, setProviderSearch] = useState('');
 
@@ -175,27 +175,19 @@ export function ModuloRcv() {
         throw new Error('Prestador seleccionado no es válido.');
       }
       
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        
-        await saveValidatedFile({
-          fileDataUri: base64Data,
-          provider,
-          year: selectedYear,
-          month: selectedMonth,
-          module: 'RCV'
-        });
+      await saveValidatedFile({
+        file: file,
+        provider,
+        year: selectedYear,
+        month: selectedMonth,
+        module: 'RCV'
+      });
 
-        toast({
-          title: '¡Éxito!',
-          description: `El archivo validado para ${provider.razonSocial} ha sido guardado.`,
-        });
-      };
-      reader.onerror = (error) => {
-        throw new Error('No se pudo leer el archivo para subirlo.');
-      }
+      toast({
+        title: '¡Éxito!',
+        description: `El archivo validado para ${provider.razonSocial} ha sido guardado.`,
+      });
+
     } catch (error: any) {
       console.error('Error al subir el archivo:', error);
       toast({

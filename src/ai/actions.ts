@@ -16,6 +16,8 @@ import * as fs from 'fs';
 import {z} from 'zod';
 import { ModelReference } from 'genkit/ai';
 import { runFileManifestUpdate } from '@/../scripts/build-file-manifest';
+import { logFileUpload } from '@/app/admin/actions';
+import { getSession } from '@/app/login/session';
 
 
 export async function listFiles(): Promise<string[]> {
@@ -142,6 +144,9 @@ export const uploadFile = ai.defineFlow(
       await fs.promises.writeFile(filePath, buffer);
       
       runFileManifestUpdate();
+      
+      const session = await getSession();
+      await logFileUpload(session?.razonSocial || 'Desconocido', 'Fenix', fileName);
 
       return { success: true, path: filePath };
     } catch (error: any) {

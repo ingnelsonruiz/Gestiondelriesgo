@@ -8,12 +8,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound } from 'lucide-react';
-import { getUsers, updateUserPassword, ProviderForAdmin } from './actions';
+import { Loader2, KeyRound, Clock } from 'lucide-react';
+import { getUsers, updateUserPassword, getActivityLog, ProviderForAdmin, ActivityLogEntry } from './actions';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function AdminPage() {
     const [users, setUsers] = useState<ProviderForAdmin[]>([]);
+    const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingLog, setLoadingLog] = useState(true);
     const [selectedUser, setSelectedUser] = useState<ProviderForAdmin | null>(null);
     const [newPassword, setNewPassword] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
@@ -22,6 +26,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         fetchUsers();
+        fetchActivityLog();
     }, []);
 
     const fetchUsers = async () => {
@@ -37,6 +42,22 @@ export default function AdminPage() {
             });
         } finally {
             setLoading(false);
+        }
+    };
+    
+    const fetchActivityLog = async () => {
+        setLoadingLog(true);
+        try {
+            const logEntries = await getActivityLog();
+            setActivityLog(logEntries);
+        } catch (error: any) {
+             toast({
+                variant: 'destructive',
+                title: 'Error al cargar el registro',
+                description: error.message,
+            });
+        } finally {
+            setLoadingLog(false);
         }
     };
 
@@ -65,8 +86,6 @@ export default function AdminPage() {
                     description: `La clave para ${selectedUser.razonSocial} ha sido actualizada.`,
                 });
                 setIsDialogOpen(false);
-                // Opcional: Refrescar la lista de usuarios si es necesario
-                // fetchUsers(); 
             } else {
                 throw new Error(result.error);
             }
@@ -165,11 +184,45 @@ export default function AdminPage() {
                 <CardHeader>
                     <CardTitle>Registro de Actividad</CardTitle>
                     <CardDescription>
-                       Próximamente: Aquí podrás ver los archivos subidos y la actividad de cada prestador.
+                       Un vistazo a las acciones más recientes realizadas en la plataforma.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p>La funcionalidad de registro de actividad se añadirá en la siguiente fase.</p>
+                    {loadingLog ? (
+                         <div className="flex justify-center items-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : activityLog.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <Clock className="mx-auto h-8 w-8 mb-2" />
+                            <p>No hay actividad registrada todavía.</p>
+                        </div>
+                    ) : (
+                        <div className="border rounded-lg max-h-96 overflow-y-auto">
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Fecha y Hora</TableHead>
+                                        <TableHead>Prestador</TableHead>
+                                        <TableHead>Acción</TableHead>
+                                        <TableHead>Detalles</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {activityLog.map((log, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell className="font-medium whitespace-nowrap">
+                                                {format(new Date(log.timestamp), "d 'de' LLLL 'de' yyyy, h:mm:ss a", { locale: es })}
+                                            </TableCell>
+                                            <TableCell>{log.provider}</TableCell>
+                                            <TableCell>{log.action}</TableCell>
+                                            <TableCell>{log.details}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </main>
