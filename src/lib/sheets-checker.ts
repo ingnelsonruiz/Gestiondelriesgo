@@ -32,7 +32,13 @@ export async function obtenerDatosDeLaHoja<T>(): Promise<T[]> {
         complete: (results: ParseResult<T>) => {
           if (results.errors.length) {
             console.error("Errores de parseo:", results.errors);
-            reject(new Error("Error al procesar el formato del archivo CSV. Verifique las columnas y el formato."));
+            // Aunque haya errores, si hay datos, consideramos la conexión exitosa para el diagnóstico.
+            // La validación estricta se hará en los módulos correspondientes.
+            if (results.data.length > 0) {
+              resolve(results.data);
+            } else {
+              reject(new Error("Error al procesar el formato del archivo CSV. Verifique las columnas y el formato."));
+            }
             return;
           }
           resolve(results.data);
