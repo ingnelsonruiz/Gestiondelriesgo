@@ -10,11 +10,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { File as FileIcon, UploadCloud, XCircle } from 'lucide-react';
+import { File as FileIcon, UploadCloud, XCircle, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ValidationReport } from '@/components/validation-report';
 import { Button } from '@/components/ui/button';
 import { validateFile, type ValidationError } from '@/app/validators/actions';
+import Papa from 'papaparse';
 
 export function ModuloGestantes() {
   const [file, setFile] = useState<File | null>(null);
@@ -99,6 +100,26 @@ export function ModuloGestantes() {
     });
   };
 
+  const handleExportErrors = () => {
+    if (!errors || errors.length === 0) {
+      toast({
+        variant: 'default',
+        title: 'No hay errores para exportar',
+      });
+      return;
+    }
+
+    const csv = Papa.unparse(errors);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'reporte_de_errores_gestantes.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-8 mt-4">
         <Card>
@@ -138,17 +159,27 @@ export function ModuloGestantes() {
             </div>
             {fileName && (
             <div className="mt-4 flex items-center justify-between text-sm">
-                <div className="flex items-center text-muted-foreground">
-                    <FileIcon className="h-4 w-4 mr-2" />
+                <div className="flex items-center text-muted-foreground gap-2">
+                    <FileIcon className="h-4 w-4" />
                     <span>
                         Archivo seleccionado:{' '}
                         <span className="font-medium">{fileName}</span>
                     </span>
                 </div>
-                <Button onClick={handleDeleteFile} variant="outline">
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Borrar archivo
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={handleExportErrors}
+                        variant="outline"
+                        disabled={!errors || errors.length === 0}
+                    >
+                        <Download className="mr-2 h-4 w-4" />
+                        Descargar Errores
+                    </Button>
+                    <Button onClick={handleDeleteFile} variant="destructive">
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Borrar archivo
+                    </Button>
+                </div>
             </div>
             )}
         </CardContent>
