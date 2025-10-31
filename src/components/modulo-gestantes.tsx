@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, type ChangeEvent } from 'react';
+import React, { useState, useRef, type ChangeEvent, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -10,12 +10,17 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { File as FileIcon, UploadCloud, XCircle, Download } from 'lucide-react';
+import { File as FileIcon, UploadCloud, XCircle, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ValidationReport } from '@/components/validation-report';
 import { Button } from '@/components/ui/button';
-import { validateFile, type ValidationError } from '@/app/validators/actions';
+import { validateFile, saveValidatedFile, type ValidationError } from '@/app/validators/actions';
 import * as XLSX from 'xlsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { getProviders, Provider } from '@/lib/providers';
+import { Loader2 } from 'lucide-react';
+
 
 export function ModuloGestantes() {
   const [file, setFile] = useState<File | null>(null);
@@ -24,8 +29,41 @@ export function ModuloGestantes() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
+  // New state for selectors
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1));
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    async function fetchProviders() {
+      try {
+        const providerList = await getProviders();
+        setProviders(providerList);
+      } catch (error) {
+        console.error('Failed to fetch providers:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error al cargar prestadores',
+          description: 'No se pudo obtener la lista de prestadores de servicios.',
+        });
+      }
+    }
+    fetchProviders();
+  }, [toast]);
+
   const processFile = async (selectedFile: File) => {
+    if (!selectedProvider) {
+      toast({
+        variant: 'destructive',
+        title: 'Selección requerida',
+        description: 'Por favor, selecciona un prestador antes de validar el archivo.',
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     setFile(selectedFile);
     setFileName(selectedFile.name);
     setErrors(null);
@@ -120,6 +158,52 @@ export function ModuloGestantes() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Errores');
     XLSX.writeFile(workbook, 'reporte_de_errores_gestantes.xlsx');
   };
+  
+  const handleUploadValidatedFile = async () => {
+    if (!file || errors?.length !== 0 || !selectedProvider) return;
+
+    setIsUploading(true);
+    toast({ title: 'Subiendo archivo validado...', description: 'Por favor, espere.' });
+    try {
+      const provider = providers.find(p => p.nit === selectedProvider);
+      if (!provider) {
+        throw new Error('Prestador seleccionado no es válido.');
+      }
+      
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+        
+        await saveValidatedFile({
+          fileDataUri: base64Data,
+          provider,
+          year: selectedYear,
+          month: selectedMonth,
+          module: 'Gestantes'
+        });
+
+        toast({
+          title: '¡Éxito!',
+          description: `El archivo validado para ${provider.razonSocial} ha sido guardado.`,
+        });
+      };
+      reader.onerror = (error) => {
+        throw new Error('No se pudo leer el archivo para subirlo.');
+      }
+    } catch (error: any) {
+      console.error('Error al subir el archivo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al Subir',
+        description: error.message || 'Ocurrió un error al guardar el archivo en el servidor.',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  const monthNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
 
   return (
     <div className="space-y-8 mt-4">
@@ -127,11 +211,52 @@ export function ModuloGestantes() {
         <CardHeader>
             <CardTitle>Subir Archivo - Data Gestante</CardTitle>
             <CardDescription>
-            Selecciona un archivo (.xlsx) para comenzar la
+            Selecciona los datos y el archivo (.xlsx) para comenzar la
             validación.
             </CardDescription>
         </CardHeader>
         <CardContent>
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="grid gap-2">
+                    <Label htmlFor="provider-select">Prestador (IPS)</Label>
+                    <Select value={selectedProvider} onValueChange={setSelectedProvider} disabled={!!file}>
+                        <SelectTrigger id="provider-select">
+                            <SelectValue placeholder="Seleccione un prestador..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {providers.map(p => (
+                                <SelectItem key={p.nit} value={p.nit}>{p.razonSocial} ({p.departamento})</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="year-select">Año</Label>
+                    <Select value={selectedYear} onValueChange={setSelectedYear} disabled={!!file}>
+                        <SelectTrigger id="year-select">
+                            <SelectValue placeholder="Año" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="2024">2024</SelectItem>
+                            <SelectItem value="2025">2025</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="month-select">Mes</Label>
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={!!file}>
+                        <SelectTrigger id="month-select">
+                            <SelectValue placeholder="Mes" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {monthNames.map((month, i) => (
+                                <SelectItem key={month} value={month}>{month}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
             <div
             className={'flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:bg-accent/50'}
             onClick={handleAreaClick}
@@ -155,7 +280,7 @@ export function ModuloGestantes() {
                 className="hidden"
                 onChange={handleFileChange}
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                disabled={isLoading || !!fileName}
+                disabled={isLoading || !!fileName || !selectedProvider}
             />
             </div>
             {fileName && (
@@ -187,8 +312,21 @@ export function ModuloGestantes() {
         </Card>
 
         <div className="mt-8">
-        <ValidationReport isLoading={isLoading} errors={errors} />
+            <ValidationReport
+                isLoading={isLoading}
+                errors={errors}
+                actionButton={
+                    errors?.length === 0 && file ? (
+                    <Button onClick={handleUploadValidatedFile} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                        Subir Archivo Validado
+                    </Button>
+                    ) : null
+                }
+            />
         </div>
     </div>
   );
 }
+
+    

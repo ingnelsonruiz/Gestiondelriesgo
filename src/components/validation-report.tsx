@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -16,15 +17,18 @@ import {
 } from '@/components/ui/table';
 import { Loader2, CheckCircle2, AlertTriangle, FileWarning } from 'lucide-react';
 import type { ValidationError } from '@/app/validators/actions';
+import { ReactNode } from 'react';
 
 interface ValidationReportProps {
   errors: ValidationError[] | null;
   isLoading: boolean;
+  actionButton?: ReactNode | null;
 }
 
 export function ValidationReport({
   errors,
   isLoading,
+  actionButton = null,
 }: ValidationReportProps) {
   if (isLoading) {
     return (
@@ -62,6 +66,11 @@ export function ValidationReport({
             Tu archivo ha sido validado correctamente y está listo para su envío.
           </p>
         </CardContent>
+        {actionButton && (
+            <CardFooter className="flex justify-center">
+                {actionButton}
+            </CardFooter>
+        )}
       </Card>
     );
   }
@@ -104,3 +113,5 @@ export function ValidationReport({
     </Card>
   );
 }
+
+    

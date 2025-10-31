@@ -2,6 +2,8 @@
 'use server';
 
 import * as XLSX from 'xlsx';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
 const VALID_MUNICIPIOS_GESTANTE = [
     "CODAZZI", "BECERRIL", "VALLEDUPAR", "LA PAZ", "CHIMICHAGUA", "SANTA MARTA",
@@ -209,3 +211,46 @@ export async function validateFile(file: File, validatorType: 'gestante' | 'rcv'
         return { errors: [], message: error.message || 'Ocurrió un error al procesar el archivo.' };
     }
 }
+
+export interface SaveValidatedFilePayload {
+    fileDataUri: string;
+    provider: {
+        nit: string;
+        razonSocial: string;
+        departamento: string;
+    };
+    year: string;
+    month: string;
+    module: 'RCV' | 'Gestantes';
+}
+
+export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
+    const { fileDataUri, provider, year, month, module } = payload;
+    
+    const NORM = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+
+    const baseFolderName = module === 'RCV' ? 'Validacion_Rcv' : 'Validacion_Gestantes';
+
+    const baseDir = path.join(process.cwd(), 'public', baseFolderName);
+    const dptoDir = path.join(baseDir, NORM(provider.departamento));
+    const providerDir = path.join(dptoDir, NORM(provider.razonSocial));
+    const yearDir = path.join(providerDir, year);
+
+    const fileName = `${NORM(month)}.xlsx`;
+    const filePath = path.join(yearDir, fileName);
+
+    try {
+        await fs.mkdir(yearDir, { recursive: true });
+
+        const buffer = Buffer.from(fileDataUri.split(',')[1], 'base64');
+
+        await fs.writeFile(filePath, buffer);
+
+        return { success: true, path: filePath };
+    } catch (error: any) {
+        console.error(`Error al guardar el archivo validado: ${error.message}`);
+        throw new Error(`No se pudo guardar el archivo en el servidor. Detalles: ${error.message}`);
+    }
+}
+
+    
