@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSession } from './app/login/actions';
+import { getSession } from './app/login/session';
 
 // Rutas que no requieren autenticación
 const publicPaths = ['/login'];

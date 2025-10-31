@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { login } from './actions';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { Toaster } from '@/components/ui/toaster';
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,38 +52,41 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-            <Image src="/imagenes/logo.jpg" alt="Dusakawi EPSI Logo" width={80} height={80} className="mx-auto mb-4 rounded-full" />
-          <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
-          <CardDescription>
-            Accede a la plataforma de gestión del riesgo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="razonSocial">Usuario (Razón Social)</Label>
-              <Input
-                id="razonSocial"
-                name="razonSocial"
-                type="text"
-                placeholder="Nombre del prestador"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="clave">Clave de Acceso</Label>
-              <Input id="clave" name="clave" type="password" required />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {loading ? 'Verificando...' : 'Entrar'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <Toaster />
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+              <Image src="/imagenes/logo.jpg" alt="Dusakawi EPSI Logo" width={80} height={80} className="mx-auto mb-4 rounded-full" />
+            <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
+            <CardDescription>
+              Accede a la plataforma de gestión del riesgo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="razonSocial">Usuario (Razón Social)</Label>
+                <Input
+                  id="razonSocial"
+                  name="razonSocial"
+                  type="text"
+                  placeholder="Nombre del prestador"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="clave">Clave de Acceso</Label>
+                <Input id="clave" name="clave" type="password" required />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {loading ? 'Verificando...' : 'Entrar'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }

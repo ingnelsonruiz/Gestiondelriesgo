@@ -1,33 +1,9 @@
 'use server';
 
-import { getLocalProviders } from '@/lib/providers-local'; // Se cambia la importación a la nueva función local
+import { getLocalProviders } from '@/lib/providers-local';
 import { redirect } from 'next/navigation';
-import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
-
-const secretKey = process.env.SESSION_SECRET || 'fallback-secret-key-for-development';
-const key = new TextEncoder().encode(secretKey);
-
-export async function encrypt(payload: any) {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('1d') // Token válido por 1 día
-    .sign(key);
-}
-
-export async function decrypt(input: string): Promise<any> {
-  try {
-    const { payload } = await jwtVerify(input, key, {
-      algorithms: ['HS256'],
-    });
-    return payload;
-  } catch (e) {
-    console.error('Failed to decrypt session:', e);
-    return null;
-  }
-}
+import { encrypt, decrypt } from './session';
 
 export async function login(formData: FormData) {
   const razonSocial = formData.get('razonSocial')?.toString();
