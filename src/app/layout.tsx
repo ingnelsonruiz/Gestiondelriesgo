@@ -92,7 +92,7 @@ export default async function RootLayout({
                               {isAdmin && (
                                 <>
                                   <SidebarMenuItem>
-                                      <SidebarMenuButton asChild tooltip="Administración">
+                                      <SidebarMenuButton asChild tooltip="Usuarios">
                                           <Link href="/admin">
                                               <UserCog />
                                               <span>Usuarios</span>
@@ -100,7 +100,7 @@ export default async function RootLayout({
                                       </SidebarMenuButton>
                                   </SidebarMenuItem>
                                   <SidebarMenuItem>
-                                      <SidebarMenuButton asChild tooltip="Gestor de Archivos">
+                                      <SidebarMenuButton asChild tooltip="Archivos">
                                           <Link href="/admin/file-manager">
                                               <FolderArchive />
                                               <span>Archivos</span>
