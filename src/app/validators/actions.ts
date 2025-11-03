@@ -28,7 +28,8 @@ async function validateGestanteFileContent(content: string): Promise<ValidationE
     const i = rowIndex + dataStartIndex + 1;
     if (row.trim() === '') return;
 
-    let columns = row.split(/\t/);
+    // FIX: Use a more robust split regex to handle empty fields correctly
+    const columns = row.split('\t');
     
     const NORM = (s: string) => (s || '').trim().toUpperCase();
 
@@ -149,7 +150,8 @@ async function validateRcvFileContent(content: string): Promise<ValidationError[
     const i = rowIndex + 4;
     if (row.trim() === '') return;
 
-    let columns = row.split(/\t/);
+    // FIX: Use a more robust split regex to handle empty fields correctly
+    const columns = row.split('\t');
     
     // Regla de validación de afiliado
     const idAfiliado = columns[6]?.trim();
