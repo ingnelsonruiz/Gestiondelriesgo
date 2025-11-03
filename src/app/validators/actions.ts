@@ -1,3 +1,4 @@
+
 'use server';
 
 import * as XLSX from 'xlsx';
@@ -16,47 +17,72 @@ function validateGestanteFileContent(content: string): ValidationError[] {
   const errors: ValidationError[] = [];
   const rows = content.split(/\r?\n/);
 
-  // Asumimos que los encabezados están en las primeras 3 filas y los datos empiezan desde la 4ta.
-  const dataRows = rows.slice(3); 
+  // Los encabezados pueden estar en las primeras 3 filas, los datos empiezan después.
+  // Buscamos la primera fila que parezca de datos (empezando con un número consecutivo)
+  let dataStartIndex = rows.findIndex(row => /^\d+\t/.test(row));
+  if (dataStartIndex === -1) dataStartIndex = 3; // Fallback si no se encuentra
+  
+  const dataRows = rows.slice(dataStartIndex); 
 
   dataRows.forEach((row, rowIndex) => {
-    const i = rowIndex + 4; // Fila real en el excel
+    const i = rowIndex + dataStartIndex + 1; // Fila real en el excel
     if (row.trim() === '') return;
 
     let columns = row.split(/\t/);
     
-    // Función para normalizar texto para comparación
     const NORM = (s: string) => (s || '').trim().toUpperCase();
 
-    const validateOptions = (colIdx: number, validOptions: string[], colName: string) => {
+    const validateOptions = (colIdx: number, validOptions: string[], colName: string, allowBlank = false) => {
         const value = NORM(columns[colIdx - 1]);
         if (value && value !== 'SIN DATOS' && value !== 'NO APLICA' && !validOptions.map(opt => NORM(opt)).includes(value)) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Valor no válido',
-                description: `"${value}" no es una opción válida para ${colName}. Opciones: ${validOptions.join(', ')}`,
+                description: `"${columns[colIdx - 1]}" no es una opción válida para ${colName}. Opciones válidas: ${validOptions.join(', ')}`,
+            });
+        }
+        if (!allowBlank && !value) {
+            errors.push({
+                location: `Fila ${i}, Col ${colIdx}`,
+                type: 'Campo requerido',
+                description: `El campo ${colName} no puede estar vacío.`,
             });
         }
     };
     
-    const validateDate = (colIdx: number, colName: string) => {
+    const validateDate = (colIdx: number, colName: string, required = false) => {
         const value = columns[colIdx - 1];
-        // Permite "sin datos", "no aplica" o celdas vacías, pero si hay algo, debe ser fecha.
-        if (value && NORM(value) !== 'SIN DATOS' && NORM(value) !== 'NO APLICA' && !/^\d{4}\/\d{2}\/\d{1,2}$/.test(value)) {
+        if (!value || NORM(value) === 'SIN DATOS' || NORM(value) === 'NO APLICA') {
+            if (required) {
+                errors.push({ location: `Fila ${i}, Col ${colIdx}`, type: 'Campo requerido', description: `La fecha para ${colName} es obligatoria.` });
+            }
+            return null;
+        }
+        
+        // Expresión regular para AAAA/MM/DD
+        if (!/^\d{4}\/\d{2}\/\d{1,2}$/.test(value)) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Formato de fecha incorrecto',
                 description: `El formato para ${colName} debe ser AAAA/MM/DD. Se encontró "${value}".`,
             });
+            return null;
         }
+        const [year, month, day] = value.split('/').map(Number);
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+             errors.push({ location: `Fila ${i}, Col ${colIdx}`, type: 'Fecha inválida', description: `La fecha "${value}" para ${colName} no es una fecha calendario válida.` });
+             return null;
+        }
+        return date;
     };
 
-    // --- Aplicando reglas basadas en la estructura ---
+    // --- Aplicando reglas expandidas ---
 
     // Col 2: Tipo de documento
     validateOptions(2, ["CC", "MS", "TI", "PA", "CD", "AS", "CE", "PE"], "Tipo de documento");
     if (NORM(columns[1]) === 'RC') {
-        errors.push({ location: `Fila ${i}, Col 2`, type: 'Inválido', description: 'El tipo de documento "RC" no está permitido.' });
+        errors.push({ location: `Fila ${i}, Col 2`, type: 'Valor no permitido', description: 'El tipo de documento "RC" no está permitido.' });
     }
 
     // Col 10: Sexo
@@ -88,40 +114,41 @@ function validateGestanteFileContent(content: string): ValidationError[] {
         errors.push({ location: `Fila ${i}, Col 17`, type: 'Inconsistencia', description: `Si la pertenencia no es Indígena, no puede seleccionar una Etnia específica.` });
     }
 
-    // Fechas (Ejemplos)
-    validateDate(8, "Fecha de Nacimiento");
-    validateDate(29, "Fecha de diagnostico del embarazo");
-    validateDate(30, "Fecha de Ingreso al Control Prenatal");
-    validateDate(31, "FUM");
-
-    // Lógica de fechas dependientes
-    const fum = new Date(columns[30]);
-    const fechaDiag = new Date(columns[28]);
-    const fechaIngreso = new Date(columns[29]);
-    if (fechaDiag < fum) {
-        errors.push({ location: `Fila ${i}, Col 29`, type: 'Inconsistencia', description: 'La fecha de diagnóstico no puede ser anterior a la FUM.' });
-    }
-    if (fechaIngreso < fechaDiag) {
-        errors.push({ location: `Fila ${i}, Col 30`, type: 'Inconsistencia', description: 'La fecha de ingreso al control no puede ser anterior a la fecha de diagnóstico.' });
-    }
-
-    // Col 62: Clasificación del riesgo
-    if (!columns[61] || NORM(columns[61]) === '') {
-       errors.push({ location: `Fila ${i}, Col 62`, type: 'Campo requerido', description: 'La clasificación del riesgo no puede estar vacía.' });
-    }
+    // Fechas y sus dependencias
+    const fum = validateDate(32, "FUM");
+    const fechaDiag = validateDate(30, "Fecha de diagnostico del embarazo");
+    const fechaIngreso = validateDate(31, "Fecha de Ingreso al Control Prenatal");
     
-    // Col 81-82: Pruebas VIH
-    validateDate(81, "Fecha Toma Prueba VIH Primer Tamizaje");
-    validateOptions(82, ["POSITIVO", "NEGATIVO"], "Resultado Primer Tamizaje prueba de VIH");
+    if (fechaDiag && fum && fechaDiag < fum) {
+        errors.push({ location: `Fila ${i}, Col 30`, type: 'Inconsistencia de Fechas', description: 'La fecha de diagnóstico no puede ser anterior a la FUM.' });
+    }
+    if (fechaIngreso && fechaDiag && fechaIngreso < fechaDiag) {
+        errors.push({ location: `Fila ${i}, Col 31`, type: 'Inconsistencia de Fechas', description: 'La fecha de ingreso al control no puede ser anterior a la fecha de diagnóstico.' });
+    }
 
-    // Col 87-88: Pruebas Sífilis
-    validateDate(87, "Fecha Primera Prueba Treponemica Rapida Sifilis");
-    validateOptions(88, ["POSITIVO", "NEGATIVO"], "Resultado Primera Prueba Treponemica Rápida Sífilis");
+    // Col 63: Clasificación del riesgo
+    validateOptions(63, ["ALTO RIESGO OBSTETRICO", "BAJO RIESGO OBSTETRICO"], "Clasificación del riesgo");
 
-    // Col 107: Urocultivo
-    validateDate(106, "Fecha de Toma de Urocultivo");
-    if(columns[105] && !columns[106]) {
-        errors.push({ location: `Fila ${i}, Col 107`, type: 'Campo requerido', description: 'Si hay fecha de urocultivo, debe haber un resultado.' });
+    // Col 64: Causas de Alto Riesgo
+    const clasificacionRiesgo = NORM(columns[62]);
+    const causasARO = NORM(columns[63]);
+    if (clasificacionRiesgo === 'ALTO RIESGO OBSTETRICO' && (!causasARO || causasARO === 'NINGUNO')) {
+         errors.push({ location: `Fila ${i}, Col 64`, type: 'Campo requerido', description: 'Si el riesgo es alto, debe especificar la causa.' });
+    }
+
+    // Col 70-71: Pruebas VIH
+    validateDate(70, "Fecha Toma Prueba VIH Primer Tamizaje");
+    validateOptions(71, ["POSITIVO", "NEGATIVO"], "Resultado Primer Tamizaje prueba de VIH", true);
+
+    // Col 79-80: Pruebas Sífilis
+    validateDate(79, "Fecha Primera Prueba Treponemica Rapida Sifilis");
+    validateOptions(80, ["POSITIVO", "NEGATIVO"], "Resultado Primera Prueba Treponemica Rápida Sífilis", true);
+
+    // Col 96-97: Urocultivo
+    const fechaUrocultivo = validateDate(96, "Fecha de Toma de Urocultivo");
+    const resultadoUrocultivo = NORM(columns[96]);
+    if(fechaUrocultivo && !resultadoUrocultivo) {
+        errors.push({ location: `Fila ${i}, Col 97`, type: 'Campo requerido', description: 'Si hay fecha de urocultivo, debe haber un resultado.' });
     }
 
   });
