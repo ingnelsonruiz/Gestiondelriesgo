@@ -80,7 +80,7 @@ async function validateGestanteFileContent(rows: any[][]): Promise<ValidationErr
             return null;
         }
         
-        if (!/^\d{4}\/\d{2}\/\d{1,2}$/.test(String(value))) {
+        if (!/^\d{4}\/\d{2}\/\d{2}$/.test(String(value))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Formato de fecha incorrecto',
@@ -197,7 +197,7 @@ async function validateRcvFileContent(rows: any[][]): Promise<ValidationError[]>
     
     const validateDate = (colIdx: number, colName: string) => {
         const value = columns[colIdx - 1];
-        if (value && !/^\d{4}\/\d{2}\/\d{1,2}$/.test(String(value))) {
+        if (value && !/^\d{4}\/\d{2}\/\d{2}$/.test(String(value))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Formato de fecha incorrecto',
@@ -355,3 +355,5 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
         throw new Error(`No se pudo guardar el archivo en el servidor. Detalles: ${error.message}`);
     }
 }
+
+    
