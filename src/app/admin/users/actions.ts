@@ -25,26 +25,41 @@ async function readAfiliados(): Promise<Afiliado[]> {
     try {
         await fs.access(AFILIADOS_FILE_PATH);
         const csvText = await fs.readFile(AFILIADOS_FILE_PATH, 'utf8');
+        
         return new Promise((resolve, reject) => {
             Papa.parse<any>(csvText, {
                 header: true,
                 skipEmptyLines: true,
-                transformHeader: (header) => header.trim().toLowerCase().replace(/\s+/g, '_'),
+                transformHeader: (header) => header.trim().toLowerCase().replace(/\s+/g, '_').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
                 complete: (results) => {
                     if (results.errors.length) {
+                        console.error("Errores de parseo en Afiliados:", results.errors);
                         return reject(new Error("Error al procesar el archivo de afiliados."));
                     }
-                    // Mapeo flexible para los nombres de las columnas
-                    const afiliados: Afiliado[] = results.data.map(row => ({
-                        tipo_identificacion: row.tipo_identificacion || row.tipo_id || '',
-                        numero_identificacion: row.numero_identificacion || row.no_de_identificación || '',
-                        primer_nombre: row.primer_nombre || '',
-                        segundo_nombre: row.segundo_nombre || '',
-                        primer_apellido: row.primer_apellido || '',
-                        segundo_apellido: row.segundo_apellido || '',
-                        fecha_nacimiento: row.fecha_nacimiento || '',
-                        sexo: row.sexo || '',
-                    })).filter(a => a.numero_identificacion); // Filtrar filas sin ID
+                    
+                    const afiliados: Afiliado[] = results.data.map(row => {
+                         // Find keys dynamically, accommodating variations
+                        const idTypeKey = Object.keys(row).find(k => k.includes('tipo_identificacion') || k.includes('tipo_id'));
+                        const idNumKey = Object.keys(row).find(k => k.includes('numero_identificacion') || k.includes('no_de_identificacion'));
+                        const firstNameKey = Object.keys(row).find(k => k.includes('primer_nombre'));
+                        const secondNameKey = Object.keys(row).find(k => k.includes('segundo_nombre'));
+                        const firstLastNameKey = Object.keys(row).find(k => k.includes('primer_apellido'));
+                        const secondLastNameKey = Object.keys(row).find(k => k.includes('segundo_apellido'));
+                        const birthDateKey = Object.keys(row).find(k => k.includes('fecha_nacimiento'));
+                        const sexKey = Object.keys(row).find(k => k.includes('sexo'));
+
+                        return {
+                            tipo_identificacion: idTypeKey ? row[idTypeKey] || '' : '',
+                            numero_identificacion: idNumKey ? row[idNumKey] || '' : '',
+                            primer_nombre: firstNameKey ? row[firstNameKey] || '' : '',
+                            segundo_nombre: secondNameKey ? row[secondNameKey] || '' : '',
+                            primer_apellido: firstLastNameKey ? row[firstLastNameKey] || '' : '',
+                            segundo_apellido: secondLastNameKey ? row[secondLastNameKey] || '' : '',
+                            fecha_nacimiento: birthDateKey ? row[birthDateKey] || '' : '',
+                            sexo: sexKey ? row[sexKey] || '' : '',
+                        };
+                    }).filter(a => a.numero_identificacion); // Filter out rows without an ID
+
                     resolve(afiliados);
                 },
                 error: (error: Error) => reject(error),
@@ -52,7 +67,8 @@ async function readAfiliados(): Promise<Afiliado[]> {
         });
     } catch (error: any) {
         if (error.code === 'ENOENT') {
-            await fs.writeFile(AFILIADOS_FILE_PATH, '', 'utf8');
+            console.warn(`Advertencia: El archivo de afiliados no se encontró en '${AFILIADOS_FILE_PATH}'. Se creará uno vacío.`);
+            await fs.writeFile(AFILIADOS_FILE_PATH, 'tipo_identificacion,numero_identificacion,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,fecha_nacimiento,sexo\n', 'utf8');
             return [];
         }
         throw new Error(`No se pudo leer el archivo de afiliados: ${error.message}`);
@@ -60,7 +76,6 @@ async function readAfiliados(): Promise<Afiliado[]> {
 }
 
 async function writeAfiliados(afiliados: Afiliado[]): Promise<void> {
-    // Usar los nombres de columna originales/esperados para la escritura
     const dataToUnparse = afiliados.map(a => ({
         'tipo_identificacion': a.tipo_identificacion,
         'numero_identificacion': a.numero_identificacion,
@@ -96,14 +111,13 @@ export async function searchAfiliados(query: string): Promise<Afiliado[]> {
     const allAfiliados = await readAfiliados();
     
     if (!query) {
-        // Devuelve una porción si no hay búsqueda para evitar sobrecargar
         return allAfiliados.slice(0, 50);
     }
     
     return allAfiliados.filter(afiliado =>
         afiliado.numero_identificacion.includes(lowerCaseQuery) ||
         `${afiliado.primer_nombre} ${afiliado.segundo_nombre} ${afiliado.primer_apellido} ${afiliado.segundo_apellido}`.toLowerCase().includes(lowerCaseQuery)
-    ).slice(0, 100); // Limita los resultados de la búsqueda también
+    ).slice(0, 100);
 }
 
 export async function addAfiliado(newAfiliado: Afiliado): Promise<{ success: boolean; error?: string }> {
@@ -152,5 +166,3 @@ export async function deleteAfiliado(id: string): Promise<{ success: boolean; er
         return { success: false, error: error.message };
     }
 }
-
-    
