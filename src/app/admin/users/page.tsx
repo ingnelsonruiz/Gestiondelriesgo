@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Edit, Trash2, Search } from 'lucide-react';
-import { searchAfiliados, addAfiliado, updateAfiliado, deleteAfiliado, type Afiliado } from './actions';
+import { searchAfiliados, addAfiliado, updateAfiliado, deleteAfiliado, type Afiliado, getAfiliadosCount } from './actions';
 
 type FormState = Afiliado;
 
 export default function AdminAfiliadosPage() {
     const [afiliados, setAfiliados] = useState<Afiliado[]>([]);
+    const [totalAfiliados, setTotalAfiliados] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -44,6 +45,10 @@ export default function AdminAfiliadosPage() {
     }, [toast]);
     
     useEffect(() => {
+        getAfiliadosCount()
+            .then(setTotalAfiliados)
+            .catch(() => setTotalAfiliados(0));
+            
         const handler = setTimeout(() => {
              startTransition(() => {
                 fetchAfiliados(searchTerm);
@@ -67,6 +72,11 @@ export default function AdminAfiliadosPage() {
         const { name, value } = e.target;
         setFormState(prev => ({ ...prev, [name]: value }));
     };
+    
+    const refreshData = () => {
+        fetchAfiliados(searchTerm);
+        getAfiliadosCount().then(setTotalAfiliados);
+    };
 
     const handleSubmit = async () => {
         if (!formState.numero_identificacion || !formState.primer_nombre || !formState.primer_apellido) {
@@ -88,7 +98,7 @@ export default function AdminAfiliadosPage() {
             if (!result.success) throw new Error(result.error);
             
             setIsFormOpen(false);
-            fetchAfiliados(searchTerm);
+            refreshData();
 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error al guardar', description: error.message });
@@ -103,7 +113,7 @@ export default function AdminAfiliadosPage() {
             const result = await deleteAfiliado(id);
             if(result.success) {
                 toast({ title: 'Éxito', description: 'El afiliado ha sido eliminado.' });
-                fetchAfiliados(searchTerm);
+                refreshData();
             } else {
                 throw new Error(result.error);
             }
@@ -117,14 +127,14 @@ export default function AdminAfiliadosPage() {
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             <Card>
-                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div>
                         <CardTitle>Gestión de Afiliados</CardTitle>
                         <CardDescription>
-                            Busque, añada, edite o elimine los afiliados de la base de datos maestra.
+                            Busque, añada, edite o elimine afiliados. Total de registros cargados: <strong>{totalAfiliados.toLocaleString()}</strong>
                         </CardDescription>
                     </div>
-                    <div className='flex gap-4'>
+                    <div className='flex flex-col sm:flex-row gap-4'>
                         <div className="relative flex-1 md:grow-0">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -269,3 +279,5 @@ export default function AdminAfiliadosPage() {
         </main>
     );
 }
+
+    

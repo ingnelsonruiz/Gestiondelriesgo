@@ -6,7 +6,7 @@ import * as path from 'path';
 import Papa from 'papaparse';
 import { logAdminAction } from '../actions';
 
-const AFILIADOS_FILE_PATH = path.join(process.cwd(), 'public', 'RCV', 'Afiliados.csv');
+const AFILIADOS_FILE_PATH = path.join(process.cwd(), 'public', 'BASES DE DATOS', 'Data_usuarios.csv');
 
 export interface Afiliado {
   tipo_identificacion: string;
@@ -23,6 +23,7 @@ export interface Afiliado {
 
 async function readAfiliados(): Promise<Afiliado[]> {
     try {
+        await fs.access(AFILIADOS_FILE_PATH);
         const csvText = await fs.readFile(AFILIADOS_FILE_PATH, 'utf8');
         return new Promise((resolve, reject) => {
             Papa.parse<any>(csvText, {
@@ -33,7 +34,7 @@ async function readAfiliados(): Promise<Afiliado[]> {
                     if (results.errors.length) {
                         return reject(new Error("Error al procesar el archivo de afiliados."));
                     }
-                    // Mapeo flexible
+                    // Mapeo flexible para los nombres de las columnas
                     const afiliados: Afiliado[] = results.data.map(row => ({
                         tipo_identificacion: row.tipo_identificacion || row.tipo_id || '',
                         numero_identificacion: row.numero_identificacion || row.no_de_identificación || '',
@@ -43,7 +44,7 @@ async function readAfiliados(): Promise<Afiliado[]> {
                         segundo_apellido: row.segundo_apellido || '',
                         fecha_nacimiento: row.fecha_nacimiento || '',
                         sexo: row.sexo || '',
-                    }));
+                    })).filter(a => a.numero_identificacion); // Filtrar filas sin ID
                     resolve(afiliados);
                 },
                 error: (error: Error) => reject(error),
@@ -59,12 +60,36 @@ async function readAfiliados(): Promise<Afiliado[]> {
 }
 
 async function writeAfiliados(afiliados: Afiliado[]): Promise<void> {
-    const csvData = Papa.unparse(afiliados, {
+    // Usar los nombres de columna originales/esperados para la escritura
+    const dataToUnparse = afiliados.map(a => ({
+        'tipo_identificacion': a.tipo_identificacion,
+        'numero_identificacion': a.numero_identificacion,
+        'primer_nombre': a.primer_nombre,
+        'segundo_nombre': a.segundo_nombre,
+        'primer_apellido': a.primer_apellido,
+        'segundo_apellido': a.segundo_apellido,
+        'fecha_nacimiento': a.fecha_nacimiento,
+        'sexo': a.sexo
+    }));
+
+    const csvData = Papa.unparse(dataToUnparse, {
         header: true,
         columns: ['tipo_identificacion', 'numero_identificacion', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'sexo']
     });
     await fs.writeFile(AFILIADOS_FILE_PATH, csvData, 'utf8');
 }
+
+
+export async function getAfiliadosCount(): Promise<number> {
+    try {
+        const afiliados = await readAfiliados();
+        return afiliados.length;
+    } catch (error) {
+        console.error("Error contando afiliados:", error);
+        return 0;
+    }
+}
+
 
 export async function searchAfiliados(query: string): Promise<Afiliado[]> {
     const lowerCaseQuery = query.toLowerCase();
@@ -127,3 +152,5 @@ export async function deleteAfiliado(id: string): Promise<{ success: boolean; er
         return { success: false, error: error.message };
     }
 }
+
+    
