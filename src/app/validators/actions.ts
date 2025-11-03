@@ -15,29 +15,43 @@ const VALID_MUNICIPIOS_GESTANTE = [
 ];
 
 async function validateGestanteFileContent(rows: any[][]): Promise<ValidationError[]> {
-  const errors: ValidationError[] = [];
   const afiliadosSet = await getAfiliadosIdSet();
+  if (!afiliadosSet) {
+    throw new Error("No se pudo cargar la base de datos de afiliados para la validación.");
+  }
 
-  let dataStartIndex = rows.findIndex(row => /^\d+$/.test(String(row[0])));
+  let dataStartIndex = rows.findIndex(row => row && /^\d+$/.test(String(row[0])));
   if (dataStartIndex === -1) dataStartIndex = 3; 
   
-  const dataRows = rows.slice(dataStartIndex); 
+  const dataRows = rows.slice(dataStartIndex);
+  const affiliateErrors: ValidationError[] = [];
 
+  // --- PRIMER MOMENTO: Validación de Afiliados ---
   dataRows.forEach((columns, rowIndex) => {
-    const i = rowIndex + dataStartIndex + 1;
-    if (columns.every(col => col === null || col === '')) return;
+    if (!columns || columns.every(col => col === null || col === '')) return;
 
-    const NORM = (s: any) => (s || '').toString().trim().toUpperCase();
-
-    // Regla de validación de afiliado
     const idAfiliado = columns[2]?.toString().trim();
     if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
-        errors.push({
-            location: `Fila ${i}, Col 3`,
+        affiliateErrors.push({
+            location: `Fila ${rowIndex + dataStartIndex + 1}, Col 3`,
             type: 'Afiliado no encontrado',
             description: `El usuario con identificación "${idAfiliado}" no se encontró en la base de datos de afiliados.`,
         });
     }
+  });
+
+  // Si hay errores de afiliación, se detiene y se devuelven solo esos errores.
+  if (affiliateErrors.length > 0) {
+      return affiliateErrors;
+  }
+
+  // --- SEGUNDO MOMENTO: Malla Validadora Completa (si no hay errores de afiliación) ---
+  const errors: ValidationError[] = [];
+  dataRows.forEach((columns, rowIndex) => {
+    const i = rowIndex + dataStartIndex + 1;
+    if (!columns || columns.every(col => col === null || col === '')) return;
+
+    const NORM = (s: any) => (s || '').toString().trim().toUpperCase();
 
     const validateOptions = (colIdx: number, validOptions: string[], colName: string, allowBlank = false) => {
         const value = NORM(columns[colIdx - 1]);
@@ -128,7 +142,6 @@ async function validateGestanteFileContent(rows: any[][]): Promise<ValidationErr
     if(fechaUrocultivo && !resultadoUrocultivo) {
         errors.push({ location: `Fila ${i}, Col 97`, type: 'Campo requerido', description: 'Si hay fecha de urocultivo, debe haber un resultado.' });
     }
-
   });
 
   return errors;
@@ -136,24 +149,40 @@ async function validateGestanteFileContent(rows: any[][]): Promise<ValidationErr
 
 
 async function validateRcvFileContent(rows: any[][]): Promise<ValidationError[]> {
-  const errors: ValidationError[] = [];
   const afiliadosSet = await getAfiliadosIdSet();
+   if (!afiliadosSet) {
+    throw new Error("No se pudo cargar la base de datos de afiliados para la validación.");
+  }
 
-  const dataRows = rows.slice(3); 
+  let dataStartIndex = rows.findIndex(row => row && /^\d+$/.test(String(row[0])));
+  if (dataStartIndex === -1) dataStartIndex = 3; 
 
+  const dataRows = rows.slice(dataStartIndex); 
+  const affiliateErrors: ValidationError[] = [];
+
+  // --- PRIMER MOMENTO: Validación de Afiliados ---
   dataRows.forEach((columns, rowIndex) => {
-    const i = rowIndex + 4;
-    if (columns.every(col => col === null || col === '')) return;
-
-    // Regla de validación de afiliado
+    if (!columns || columns.every(col => col === null || col === '')) return;
+    
     const idAfiliado = columns[6]?.toString().trim();
     if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
-        errors.push({
-            location: `Fila ${i}, Col 7`,
+        affiliateErrors.push({
+            location: `Fila ${rowIndex + dataStartIndex + 1}, Col 7`,
             type: 'Afiliado no encontrado',
             description: `El usuario con identificación "${idAfiliado}" no se encontró en la base de datos de afiliados.`,
         });
     }
+  });
+
+  if (affiliateErrors.length > 0) {
+      return affiliateErrors;
+  }
+  
+  // --- SEGUNDO MOMENTO: Malla Validadora Completa ---
+  const errors: ValidationError[] = [];
+  dataRows.forEach((columns, rowIndex) => {
+    const i = rowIndex + dataStartIndex + 1;
+    if (!columns || columns.every(col => col === null || col === '')) return;
 
     const validateOptions = (colIdx: number, validOptions: string[], colName: string) => {
         const value = columns[colIdx - 1]?.toString().trim().toUpperCase();
@@ -270,7 +299,6 @@ export async function validateFile(file: File, validatorType: 'gestante' | 'rcv'
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
-        // Convert sheet to an array of arrays, which is more robust
         const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
         
         const validationErrors = validatorType === 'gestante' 
