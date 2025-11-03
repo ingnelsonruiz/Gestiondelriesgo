@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, type ChangeEvent, useEffect, useMemo } from 'react';
@@ -219,7 +220,7 @@ export function ModuloRcv() {
           <CardHeader>
             <CardTitle>Subir Archivo - Data RCV</CardTitle>
             <CardDescription>
-              Selecciona los datos y el archivo (.xlsx) para comenzar la validación.
+              Selecciona los datos y el archivo (.csv) para comenzar la validación.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -297,7 +298,7 @@ export function ModuloRcv() {
                 o arrastra y suelta
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Formatos admitidos: XLSX
+                Formatos admitidos: CSV (delimitado por punto y coma)
               </p>
               <Input
                 ref={fileInputRef}
@@ -305,7 +306,7 @@ export function ModuloRcv() {
                 type="file"
                 className="hidden"
                 onChange={handleFileChange}
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".csv,text/csv"
                 disabled={isLoading || !!fileName || !selectedProvider}
               />
             </div>

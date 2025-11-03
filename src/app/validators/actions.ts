@@ -2,6 +2,7 @@
 'use server';
 
 import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { logFileUpload } from '../admin/actions';
@@ -40,7 +41,6 @@ async function validateGestanteFileContent(rows: any[][]): Promise<ValidationErr
     }
   });
 
-  // Si hay errores de afiliación, se detiene y se devuelven solo esos errores.
   if (affiliateErrors.length > 0) {
       return affiliateErrors;
   }
@@ -148,14 +148,14 @@ async function validateGestanteFileContent(rows: any[][]): Promise<ValidationErr
 }
 
 
-async function validateRcvFileContent(rows: any[][]): Promise<ValidationError[]> {
+async function validateRcvFileContent(rows: string[][]): Promise<ValidationError[]> {
   const afiliadosSet = await getAfiliadosIdSet();
    if (!afiliadosSet) {
     throw new Error("No se pudo cargar la base de datos de afiliados para la validación.");
   }
 
   let dataStartIndex = rows.findIndex(row => row && /^\d+$/.test(String(row[0])));
-  if (dataStartIndex === -1) dataStartIndex = 3; 
+  if (dataStartIndex === -1) dataStartIndex = 1; 
 
   const dataRows = rows.slice(dataStartIndex); 
   const affiliateErrors: ValidationError[] = [];
@@ -197,7 +197,7 @@ async function validateRcvFileContent(rows: any[][]): Promise<ValidationError[]>
     
     const validateDate = (colIdx: number, colName: string) => {
         const value = columns[colIdx - 1];
-        if (value && !/^\d{4}\/\d{2}\/\d{2}$/.test(String(value))) {
+        if (value && !/^\d{4}\/\d{2}\/\d{2}$/.test(String(value)) && !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Formato de fecha incorrecto',
@@ -293,20 +293,31 @@ export interface ValidationError {
 
 export async function validateFile(file: File, validatorType: 'gestante' | 'rcv') {
     try {
-        const data = await file.arrayBuffer();
-        
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy/mm/dd' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        
-        const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
-        
-        const validationErrors = validatorType === 'gestante' 
-            ? await validateGestanteFileContent(rowsAsArray)
-            : await validateRcvFileContent(rowsAsArray);
-
-        return { errors: validationErrors };
-
+        if (validatorType === 'rcv') {
+            const text = await file.text();
+            return new Promise((resolve) => {
+                Papa.parse<string[]>(text, {
+                    delimiter: ';',
+                    skipEmptyLines: true,
+                    complete: async (results) => {
+                        const validationErrors = await validateRcvFileContent(results.data);
+                        resolve({ errors: validationErrors });
+                    },
+                    error: (error: Error) => {
+                        console.error('Error procesando el archivo CSV:', error);
+                        resolve({ errors: [], message: error.message || 'Ocurrió un error al procesar el archivo CSV.' });
+                    }
+                });
+            });
+        } else { // 'gestante'
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy/mm/dd' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+            const validationErrors = await validateGestanteFileContent(rowsAsArray);
+            return { errors: validationErrors };
+        }
     } catch (error: any) {
         console.error('Error procesando el archivo:', error);
         return { errors: [], message: error.message || 'Ocurrió un error al procesar el archivo.' };
@@ -331,13 +342,14 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
     const NORM = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
     const baseFolderName = module === 'RCV' ? 'Validacion_Rcv' : 'Validacion_Gestantes';
+    const fileExtension = module === 'RCV' ? '.csv' : '.xlsx';
 
     const baseDir = path.join(process.cwd(), 'public', baseFolderName);
     const dptoDir = path.join(baseDir, NORM(provider.departamento));
     const providerDir = path.join(dptoDir, NORM(provider.razonSocial));
     const yearDir = path.join(providerDir, year);
 
-    const fileName = `${NORM(month)}.xlsx`;
+    const fileName = `${NORM(month)}${fileExtension}`;
     const filePath = path.join(yearDir, fileName);
 
     try {
@@ -355,5 +367,3 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
         throw new Error(`No se pudo guardar el archivo en el servidor. Detalles: ${error.message}`);
     }
 }
-
-    
