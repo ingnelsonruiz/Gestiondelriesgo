@@ -5,7 +5,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import Papa from 'papaparse';
 
-const AFILIADOS_FILE_PATH = path.join(process.cwd(), 'public', 'RCV', 'Afiliados.csv');
+const AFILIADOS_FILE_PATH = path.join(process.cwd(), 'public', 'BASES DE DATOS', 'Data_usuarios.csv');
 
 let afiliadosIdSet: Set<string> | null = null;
 let lastModifiedTime: number | null = null;
@@ -26,9 +26,10 @@ async function loadAfiliados(): Promise<Set<string>> {
             Papa.parse<any>(csvText, {
                 header: true,
                 skipEmptyLines: true,
+                transformHeader: (header) => header.trim().toLowerCase().replace(/\s+/g, '_'),
                 chunk: (results) => {
                     results.data.forEach((row: any) => {
-                        const idKey = Object.keys(row).find(k => k.toLowerCase().replace(/\s+/g, '_').includes('numero_identificacion') || k.toLowerCase().includes('no_de_identificación'));
+                        const idKey = Object.keys(row).find(k => k.includes('numero_identificacion') || k.includes('no_de_identificación'));
                         if (idKey && row[idKey]) {
                             tempSet.add(String(row[idKey]).trim());
                         }
@@ -65,9 +66,14 @@ export async function getAfiliadosIdSet(): Promise<Set<string>> {
     }
     
     // Verificación rápida para cambios sin bloquear siempre con stat
-    const stats = await fs.stat(AFILIADOS_FILE_PATH).catch(() => null);
-    if (!stats || stats.mtimeMs !== lastModifiedTime) {
-        return await loadAfiliados();
+    try {
+      const stats = await fs.stat(AFILIADOS_FILE_PATH);
+      if (stats.mtimeMs !== lastModifiedTime) {
+          return await loadAfiliados();
+      }
+    } catch (e) {
+      // El archivo pudo haber sido eliminado, recargar para manejar el error.
+      return await loadAfiliados();
     }
     
     return afiliadosIdSet;
