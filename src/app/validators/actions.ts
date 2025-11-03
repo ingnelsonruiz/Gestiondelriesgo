@@ -184,19 +184,21 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     const i = rowIndex + dataStartIndex + 1;
     if (!columns || columns.every(col => col === null || col === '')) return;
 
-    const validateOptions = (colIdx: number, validOptions: string[], colName: string) => {
+    const validateOptions = (colIdx: number, validOptions: string[], colName: string, allowBlank = false) => {
         const value = columns[colIdx - 1]?.toString().trim().toUpperCase();
+        if (allowBlank && !value) return;
         if (value && !validOptions.map(opt => opt.toUpperCase()).includes(value)) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Valor no válido',
-                description: `"${value}" no es una opción válida para ${colName}. Opciones: ${validOptions.join(', ')}`,
+                description: `"${columns[colIdx - 1]}" no es una opción válida para ${colName}. Opciones: ${validOptions.join(', ')}`,
             });
         }
     };
     
-    const validateDate = (colIdx: number, colName: string) => {
+    const validateDate = (colIdx: number, colName: string, allowBlank = false) => {
         const value = columns[colIdx - 1];
+        if (allowBlank && (!value || String(value).trim() === '')) return;
         if (value && !/^\d{4}\/\d{2}\/\d{2}$/.test(String(value)) && !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
@@ -206,8 +208,9 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
         }
     };
 
-    const validateNumber = (colIdx: number, colName: string) => {
+    const validateNumber = (colIdx: number, colName: string, allowBlank = false) => {
       const value = columns[colIdx-1];
+       if (allowBlank && (!value || String(value).trim() === '')) return;
        if (value && isNaN(Number(String(value).replace(',','.')))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
@@ -228,11 +231,9 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     validateOptions(19, ["Rural", "Urbana"], "Zona");
     validateDate(24, "Fecha Ingreso al programa");
     validateOptions(25, ["Si", "No"], "DX HTA");
-    validateOptions(26, ["Si", "No"], "DX DM");
-    validateOptions(27, ["Si", "No"], "DX ERC");
-    validateDate(28, "Fecha Diagnóstico ERC");
-    validateOptions(29, ["Si", "No"], "DX Obesidad");
-    validateDate(30, "Fecha Diagnóstico Obesidad");
+    validateDate(28, "Fecha Diagnóstico HTA", true);
+    validateOptions(29, ["Si", "No"], "DX DM");
+    validateDate(30, "Fecha Diagnóstico DM", true);
     validateOptions(31, ["Tipo 1 Insulinodependiente", "Tipo 2 No Insulinodependiente", "No Aplica"], "Tipo DM");
     validateOptions(32, ["HTA o DM", "Autoinmune", "Nefropatía Obstructiva", "Enfermedad Poliquistica", "No tiene ERC", "Otras"], "Causa ERC");
     validateNumber(33, "TAS");
@@ -245,40 +246,47 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     validateDate(44, "Fecha Clasificacion RCV");
     validateDate(46, "Fecha Creatinina");
     validateNumber(47, "Resultado Creatinina");
-    validateDate(48, "Fecha Microalbuminuria");
-    validateNumber(49, "Resultado Microalbuminuria");
-    validateDate(50, "Fecha Uroanalisis");
-    validateOptions(51, ["Normal", "Proteinura", "Hematuria", "Otra"], "Resultado Uroanalisis");
-    validateDate(52, "Fecha Col Total");
-    validateNumber(53, "Resultado Col Total");
-    validateDate(54, "Fecha Col LDL");
-    validateNumber(55, "Resultado Col LDL");
-    validateNumber(56, "Resultado Col HDL");
-    validateNumber(57, "Resultado Trigliceridos");
-    validateNumber(58, "No de Controles RCV");
-    validateDate(59, "Fecha Glicemia Basal");
-    validateDate(60, "Fecha Hemoglobina Glicosilada");
-    validateNumber(61, "Resultado Hemoglobina Glicosilada");
-    validateDate(62, "Fecha Prueba de Ojo");
-    validateOptions(63, ["Si", "No"], "Resultados Prueba Ojo");
-    validateNumber(64, "Dosis Insulina");
-    validateDate(65, "Fecha Electrocardiograma");
-    validateOptions(66, ["Normal", "Enf. Coronaria", "Trans. Ritmo", "Hipertrofia Ventricular", "Hipertrofia Auricular", "Otro"], "Resultado Electrocardiograma");
-    validateDate(67, "Fecha Ecocardiograma");
-    validateOptions(68, ["Si", "No"], "Resultado Ecocardiograma");
-    validateDate(69, "Fecha Holter");
+    validateDate(48, "Fecha Microalbuminuria", true);
+    validateNumber(49, "Resultado Microalbuminuria", true);
+    validateDate(50, "Fecha Uroanalisis", true);
+    validateOptions(51, ["Normal", "Proteinura", "Hematuria", "Otra"], "Resultado Uroanalisis", true);
+    validateDate(52, "Fecha Col Total", true);
+    validateNumber(53, "Resultado Col Total", true);
+    validateDate(54, "Fecha Col LDL", true);
+    validateNumber(55, "Resultado Col LDL", true);
+    validateNumber(56, "Resultado Col HDL", true);
+    validateNumber(57, "Resultado Trigliceridos", true);
+    validateNumber(58, "No de Controles RCV", true);
+    validateDate(59, "Fecha Glicemia Basal", true);
+    validateDate(60, "Fecha Hemoglobina Glicosilada", true);
+    validateNumber(61, "Resultado Hemoglobina Glicosilada", true);
+    validateDate(62, "Fecha Prueba de Ojo", true);
+    validateOptions(63, ["Si", "No"], "Resultados Prueba Ojo", true);
+    validateNumber(64, "Dosis Insulina", true);
+    validateDate(65, "Fecha Electrocardiograma", true);
+    validateOptions(66, ["Normal", "Enf. Coronaria", "Trans. Ritmo", "Hipertrofia Ventricular", "Hipertrofia Auricular", "Otro"], "Resultado Electrocardiograma", true);
+    validateDate(67, "Fecha Ecocardiograma", true);
+    validateOptions(68, ["Si", "No"], "Resultado Ecocardiograma", true);
+    validateDate(69, "Fecha Holter", true);
 
+    // Columns 70-80 are ignored as requested
+
+    // Loop for monthly controls (columns 81 to 104)
     for (let j = 0; j < 12; j++) {
-        validateDate(75 + j * 2, `Fecha Control ${j + 1}`);
-        validateOptions(76 + j * 2, ["Medico", "Enfermera", "Aux. Enfermeria"], `Profesional Control ${j + 1}`);
+        const baseCol = 81;
+        validateDate(baseCol + j * 2, `Fecha Control ${j + 1}`, true);
+        validateOptions(baseCol + j * 2 + 1, ["Medico", "Enfermera", "Aux. Enfermeria", "MEDICO GRAL", "MEDICO Y ENFERMERA"], `Profesional Control ${j + 1}`, true);
     }
     
-    validateDate(99, "Fecha Ultima Toma TA");
-    validateNumber(100, "TAS Ultima Toma");
-    validateNumber(101, "TAD Ultima Toma");
-    validateOptions(112, ["Si", "No"], "Remisión");
-    validateDate(114, "Fecha Hospitalización");
-    validateDate(118, "Fecha de Muerte");
+    validateDate(105, "Fecha Proximo Control", true);
+    validateNumber(106, "TAS Ultima Toma");
+    validateNumber(107, "TAD Ultima Toma");
+    validateDate(109, "Fecha Ultima Toma TA", true);
+    
+    validateOptions(118, ["Si", "No"], "Remisión", true); // Remitido a
+    validateDate(119, "Fecha de Remision", true);
+    
+    validateDate(122, "Fecha de Muerte", true);
   });
 
   return errors;
@@ -314,7 +322,7 @@ export async function validateFile(file: File, validatorType: 'gestante' | 'rcv'
             const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy/mm/dd' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+            const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, dateNF: 'yyyy/mm/dd' });
             const validationErrors = await validateGestanteFileContent(rowsAsArray);
             return { errors: validationErrors };
         }
