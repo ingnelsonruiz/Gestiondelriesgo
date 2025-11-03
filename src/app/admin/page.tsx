@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -23,7 +24,6 @@ export default function AdminPage() {
     const [loadingLog, setLoadingLog] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // State for Dialogs
     const [isUserFormOpen, setIsUserFormOpen] = useState(false);
     const [formState, setFormState] = useState<FormState>({ razonSocial: '', departamento: '', clave: '' });
     const [editingUser, setEditingUser] = useState<ProviderForAdmin | null>(null);
@@ -38,7 +38,7 @@ export default function AdminPage() {
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'Error al cargar usuarios',
+                title: 'Error al cargar prestadores',
                 description: error.message,
             });
         } finally {
@@ -104,6 +104,7 @@ export default function AdminPage() {
             
             setIsUserFormOpen(false);
             fetchUsers();
+            fetchActivityLog();
 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error al guardar', description: error.message });
@@ -119,6 +120,7 @@ export default function AdminPage() {
             if(result.success) {
                 toast({ title: 'Éxito', description: 'El prestador ha sido eliminado.' });
                 fetchUsers();
+                fetchActivityLog();
             } else {
                 throw new Error(result.error);
             }

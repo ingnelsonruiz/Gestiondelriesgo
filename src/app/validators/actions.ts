@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { logFileUpload } from '../admin/actions';
+import { getAfiliadosIdSet } from '@/lib/user-validator';
 
 const VALID_MUNICIPIOS_GESTANTE = [
     "CODAZZI", "BECERRIL", "VALLEDUPAR", "LA PAZ", "CHIMICHAGUA", "SANTA MARTA",
@@ -13,24 +14,33 @@ const VALID_MUNICIPIOS_GESTANTE = [
     "BARRANCAS", "FONSECA", "ALBANIA", "DISTRACCION", "URIBIA"
 ];
 
-function validateGestanteFileContent(content: string): ValidationError[] {
+async function validateGestanteFileContent(content: string): Promise<ValidationError[]> {
   const errors: ValidationError[] = [];
   const rows = content.split(/\r?\n/);
+  const afiliadosSet = await getAfiliadosIdSet();
 
-  // Los encabezados pueden estar en las primeras 3 filas, los datos empiezan después.
-  // Buscamos la primera fila que parezca de datos (empezando con un número consecutivo)
   let dataStartIndex = rows.findIndex(row => /^\d+\t/.test(row));
-  if (dataStartIndex === -1) dataStartIndex = 3; // Fallback si no se encuentra
+  if (dataStartIndex === -1) dataStartIndex = 3; 
   
   const dataRows = rows.slice(dataStartIndex); 
 
   dataRows.forEach((row, rowIndex) => {
-    const i = rowIndex + dataStartIndex + 1; // Fila real en el excel
+    const i = rowIndex + dataStartIndex + 1;
     if (row.trim() === '') return;
 
     let columns = row.split(/\t/);
     
     const NORM = (s: string) => (s || '').trim().toUpperCase();
+
+    // Regla de validación de afiliado
+    const idAfiliado = columns[2]?.trim();
+    if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
+        errors.push({
+            location: `Fila ${i}, Col 3`,
+            type: 'Afiliado no encontrado',
+            description: `El usuario con identificación "${idAfiliado}" no se encontró en la base de datos de afiliados.`,
+        });
+    }
 
     const validateOptions = (colIdx: number, validOptions: string[], colName: string, allowBlank = false) => {
         const value = NORM(columns[colIdx - 1]);
@@ -59,7 +69,6 @@ function validateGestanteFileContent(content: string): ValidationError[] {
             return null;
         }
         
-        // Expresión regular para AAAA/MM/DD
         if (!/^\d{4}\/\d{2}\/\d{1,2}$/.test(value)) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
@@ -77,33 +86,18 @@ function validateGestanteFileContent(content: string): ValidationError[] {
         return date;
     };
 
-    // --- Aplicando reglas expandidas ---
-
-    // Col 2: Tipo de documento
     validateOptions(2, ["CC", "MS", "TI", "PA", "CD", "AS", "CE", "PE"], "Tipo de documento");
     if (NORM(columns[1]) === 'RC') {
         errors.push({ location: `Fila ${i}, Col 2`, type: 'Valor no permitido', description: 'El tipo de documento "RC" no está permitido.' });
     }
-
-    // Col 10: Sexo
     validateOptions(10, ["FEMENINO"], "Sexo");
-
-    // Col 11: Régimen
     validateOptions(11, ["S", "C"], "Régimen Afiliación");
-
-    // Col 12: Pertenencia Étnica
     validateOptions(12, ["INDÍGENA", "ROM (GITANO)", "RAIZAL DEL ARCHIPIELAGO", "NEGRO (A), MULATO, AFROAMERICANO", "MESTIZO", "NINGUNAS DE LAS ANTERIORES"], "Pertenencia Étnica");
-
-    // Col 15: Municipio de Residencia
     const municipio = NORM(columns[14]);
     if (municipio && !VALID_MUNICIPIOS_GESTANTE.includes(municipio)) {
          errors.push({ location: `Fila ${i}, Col 15`, type: 'Valor no válido', description: `El municipio "${columns[14]}" no es válido.` });
     }
-    
-    // Col 16: Zona
     validateOptions(16, ["RURAL", "URBANA"], "Zona");
-
-    // Col 17: Etnia
     const etnia = NORM(columns[16]);
     const pertenencia = NORM(columns[11]);
     const etniasValidas = ["WAYUU", "ARHUACO", "WIWA", "YUKPA", "KOGUI", "INGA", "KANKUAMO", "CHIMILA", "ZENU"];
@@ -113,38 +107,25 @@ function validateGestanteFileContent(content: string): ValidationError[] {
     if ((pertenencia === 'NINGUNAS DE LAS ANTERIORES' || pertenencia === 'MESTIZO') && etniasValidas.includes(etnia)) {
         errors.push({ location: `Fila ${i}, Col 17`, type: 'Inconsistencia', description: `Si la pertenencia no es Indígena, no puede seleccionar una Etnia específica.` });
     }
-
-    // Fechas y sus dependencias
     const fum = validateDate(32, "FUM");
     const fechaDiag = validateDate(30, "Fecha de diagnostico del embarazo");
     const fechaIngreso = validateDate(31, "Fecha de Ingreso al Control Prenatal");
-    
     if (fechaDiag && fum && fechaDiag < fum) {
         errors.push({ location: `Fila ${i}, Col 30`, type: 'Inconsistencia de Fechas', description: 'La fecha de diagnóstico no puede ser anterior a la FUM.' });
     }
     if (fechaIngreso && fechaDiag && fechaIngreso < fechaDiag) {
         errors.push({ location: `Fila ${i}, Col 31`, type: 'Inconsistencia de Fechas', description: 'La fecha de ingreso al control no puede ser anterior a la fecha de diagnóstico.' });
     }
-
-    // Col 63: Clasificación del riesgo
     validateOptions(63, ["ALTO RIESGO OBSTETRICO", "BAJO RIESGO OBSTETRICO"], "Clasificación del riesgo");
-
-    // Col 64: Causas de Alto Riesgo
     const clasificacionRiesgo = NORM(columns[62]);
     const causasARO = NORM(columns[63]);
     if (clasificacionRiesgo === 'ALTO RIESGO OBSTETRICO' && (!causasARO || causasARO === 'NINGUNO')) {
          errors.push({ location: `Fila ${i}, Col 64`, type: 'Campo requerido', description: 'Si el riesgo es alto, debe especificar la causa.' });
     }
-
-    // Col 70-71: Pruebas VIH
     validateDate(70, "Fecha Toma Prueba VIH Primer Tamizaje");
     validateOptions(71, ["POSITIVO", "NEGATIVO"], "Resultado Primer Tamizaje prueba de VIH", true);
-
-    // Col 79-80: Pruebas Sífilis
     validateDate(79, "Fecha Primera Prueba Treponemica Rapida Sifilis");
     validateOptions(80, ["POSITIVO", "NEGATIVO"], "Resultado Primera Prueba Treponemica Rápida Sífilis", true);
-
-    // Col 96-97: Urocultivo
     const fechaUrocultivo = validateDate(96, "Fecha de Toma de Urocultivo");
     const resultadoUrocultivo = NORM(columns[96]);
     if(fechaUrocultivo && !resultadoUrocultivo) {
@@ -157,17 +138,28 @@ function validateGestanteFileContent(content: string): ValidationError[] {
 }
 
 
-function validateRcvFileContent(content: string): ValidationError[] {
+async function validateRcvFileContent(content: string): Promise<ValidationError[]> {
   const errors: ValidationError[] = [];
   const rows = content.split(/\r?\n/);
+  const afiliadosSet = await getAfiliadosIdSet();
 
   const dataRows = rows.slice(3); 
 
   dataRows.forEach((row, rowIndex) => {
-    const i = rowIndex + 4; // Fila real en el excel
+    const i = rowIndex + 4;
     if (row.trim() === '') return;
 
     let columns = row.split(/\t/);
+    
+    // Regla de validación de afiliado
+    const idAfiliado = columns[6]?.trim();
+    if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
+        errors.push({
+            location: `Fila ${i}, Col 7`,
+            type: 'Afiliado no encontrado',
+            description: `El usuario con identificación "${idAfiliado}" no se encontró en la base de datos de afiliados.`,
+        });
+    }
 
     const validateOptions = (colIdx: number, validOptions: string[], colName: string) => {
         const value = columns[colIdx - 1]?.trim().toUpperCase();
@@ -202,7 +194,6 @@ function validateRcvFileContent(content: string): ValidationError[] {
        }
     };
 
-    // Aplicando reglas
     if (!/^\d+$/.test(columns[0])) errors.push({ location: `Fila ${i}, Col 1`, type: 'Inválido', description: 'El consecutivo debe ser un número entero.' });
 
     validateOptions(6, ["CC", "MS", "RC", "TI", "PA", "CD", "AS", "PT"], "Tipo de documento");
@@ -286,12 +277,11 @@ export async function validateFile(file: File, validatorType: 'gestante' | 'rcv'
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
-        // Se formatea a AAAA/MM/DD para consistencia en la validación
         fileContentForValidation = XLSX.utils.sheet_to_csv(worksheet, { FS: "\t", dateNF: 'yyyy/mm/dd' });
         
         const validationErrors = validatorType === 'gestante' 
-            ? validateGestanteFileContent(fileContentForValidation)
-            : validateRcvFileContent(fileContentForValidation);
+            ? await validateGestanteFileContent(fileContentForValidation)
+            : await validateRcvFileContent(fileContentForValidation);
 
         return { errors: validationErrors };
 
@@ -335,7 +325,6 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
 
         await fs.writeFile(filePath, buffer);
         
-        // Log activity
         await logFileUpload(provider.razonSocial, module, `${year}/${fileName}`);
 
         return { success: true, path: filePath };

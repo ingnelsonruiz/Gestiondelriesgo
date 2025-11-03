@@ -85,7 +85,7 @@ export async function addProvider(newProvider: ProviderForAdmin): Promise<{ succ
 
         providers.push(newProvider);
         await writeProviders(providers);
-        await writeActivityLog({ action: 'Admin: Añadir Usuario', provider: 'ADMIN', details: `Añadido ${newProvider.razonSocial}` });
+        await writeActivityLog({ action: 'Admin: Añadir Prestador', provider: 'ADMIN', details: `Añadido ${newProvider.razonSocial}` });
         
         return { success: true };
     } catch (error: any) {
@@ -100,13 +100,13 @@ export async function updateProvider(updatedProvider: ProviderForAdmin): Promise
         const userIndex = providers.findIndex(p => p.nit === updatedProvider.nit);
 
         if (userIndex === -1) {
-            return { success: false, error: 'Usuario no encontrado para actualizar.' };
+            return { success: false, error: 'Prestador no encontrado para actualizar.' };
         }
 
         // Actualizar los datos
         providers[userIndex] = { ...providers[userIndex], ...updatedProvider };
         await writeProviders(providers);
-        await writeActivityLog({ action: 'Admin: Actualizar Usuario', provider: 'ADMIN', details: `Actualizado ${updatedProvider.razonSocial}` });
+        await writeActivityLog({ action: 'Admin: Actualizar Prestador', provider: 'ADMIN', details: `Actualizado ${updatedProvider.razonSocial}` });
 
         return { success: true };
     } catch (error: any) {
@@ -121,7 +121,7 @@ export async function deleteProvider(nit: string): Promise<{ success: boolean; e
         const userToDelete = providers.find(p => p.nit === nit);
         
         if (!userToDelete) {
-             return { success: false, error: 'Usuario no encontrado para eliminar.' };
+             return { success: false, error: 'Prestador no encontrado para eliminar.' };
         }
         if (userToDelete.razonSocial.toUpperCase() === 'ADMIN') {
             return { success: false, error: 'No se puede eliminar al usuario administrador.' };
@@ -129,7 +129,7 @@ export async function deleteProvider(nit: string): Promise<{ success: boolean; e
 
         providers = providers.filter(p => p.nit !== nit);
         await writeProviders(providers);
-        await writeActivityLog({ action: 'Admin: Eliminar Usuario', provider: 'ADMIN', details: `Eliminado prestador con NIT ${nit}` });
+        await writeActivityLog({ action: 'Admin: Eliminar Prestador', provider: 'ADMIN', details: `Eliminado prestador con NIT ${nit}` });
 
         return { success: true };
     } catch (error: any) {
@@ -175,6 +175,14 @@ export async function logFileUpload(providerName: string, module: 'Fenix' | 'Ges
         provider: providerName,
         action: `Subida de archivo: ${module}`,
         details: `Archivo: ${fileName}`,
+    });
+}
+
+export async function logAdminAction(action: string, details: string) {
+    await writeActivityLog({
+        provider: 'ADMIN',
+        action: `Admin: ${action}`,
+        details: details,
     });
 }
 

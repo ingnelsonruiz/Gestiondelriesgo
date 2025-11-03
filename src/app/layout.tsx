@@ -1,9 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Home, BarChart3, PanelLeft, FileQuestion, Server, ShieldCheck, Link2, FileCheck2, LogOut, UserCog, FolderArchive, History } from 'lucide-react';
+import { Home, BarChart3, PanelLeft, FileQuestion, Server, ShieldCheck, Link2, FileCheck2, LogOut, UserCog, FolderArchive, History, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Footer } from './footer';
@@ -92,10 +93,18 @@ export default async function RootLayout({
                               {isAdmin && (
                                 <>
                                   <SidebarMenuItem>
-                                      <SidebarMenuButton asChild tooltip="Usuarios">
+                                      <SidebarMenuButton asChild tooltip="Prestadores">
                                           <Link href="/admin">
                                               <UserCog />
-                                              <span>Usuarios</span>
+                                              <span>Prestadores</span>
+                                          </Link>
+                                      </SidebarMenuButton>
+                                  </SidebarMenuItem>
+                                   <SidebarMenuItem>
+                                      <SidebarMenuButton asChild tooltip="Afiliados">
+                                          <Link href="/admin/users">
+                                              <Users />
+                                              <span>Afiliados</span>
                                           </Link>
                                       </SidebarMenuButton>
                                   </SidebarMenuItem>
