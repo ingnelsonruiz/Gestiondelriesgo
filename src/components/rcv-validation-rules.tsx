@@ -16,7 +16,7 @@ const validationRules = [
     { column: 5, field: "SEG APELLIDO", rule: "Ingresar Segundo Apellido" },
     { column: 6, field: "TI IDENTIFICIÓN", rule: "Opciones: CC, MS, RC, TI, PA, CD, AS, PT" },
     { column: 7, field: "NÚMERO DE IDENTIFICACIÓN", rule: "Ingresar el número de identificación" },
-    { column: 8, field: "FECHA DE NACIMIENTO", rule: "Formato: año/mes/día" },
+    { column: 8, field: "FECHA DE NACIMIENTO", rule: "Se debe escribir la fecha de nacimiento de la siguiente forma: año/mes/día" },
     { column: 9, field: "60 Y MAS AÑOS ?", rule: "Este campo es calculado automaticamente, no se debe modificar la Fómula" },
     { column: 10, field: "EDAD", rule: "Este campo es calculado automaticamente, no se debe modificar la Fómula" },
     { column: 11, field: "SEXO", rule: "Opciones: Femenino, Masculino" },

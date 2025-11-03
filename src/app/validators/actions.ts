@@ -153,11 +153,13 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
    if (!afiliadosSet) {
     throw new Error("No se pudo cargar la base de datos de afiliados para la validación.");
   }
+  
+  let dataStartIndex = 0;
+  while(dataStartIndex < rows.length && !/^\d+$/.test(rows[dataStartIndex][0])) {
+      dataStartIndex++;
+  }
 
-  let dataStartIndex = rows.findIndex(row => row && /^\d+$/.test(String(row[0])));
-  if (dataStartIndex === -1) dataStartIndex = 1; 
-
-  const dataRows = rows.slice(dataStartIndex); 
+  const dataRows = rows.slice(dataStartIndex);
   const affiliateErrors: ValidationError[] = [];
 
   // --- PRIMER MOMENTO: Validación de Afiliados ---
@@ -222,71 +224,72 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
 
     if (!/^\d+$/.test(String(columns[0]))) errors.push({ location: `Fila ${i}, Col 1`, type: 'Inválido', description: 'El consecutivo debe ser un número entero.' });
 
-    validateOptions(6, ["CC", "MS", "RC", "TI", "PA", "CD", "AS", "PT"], "Tipo de documento");
-    validateDate(8, "Fecha de Nacimiento");
-    validateOptions(11, ["Femenino", "Masculino"], "Sexo");
-    validateOptions(12, ["S", "C"], "Regimen Afiliacion");
-    validateOptions(13, ["Indígena", "ROM (Gitano)", "Raizal del Archipielago", "Negro (a), Mulato, Afroamericano", "Mestizo", "Ningunas de las Anteriores"], "Pertenencia Etnica");
-    validateOptions(15, ["Wayuu", "Arhuaco", "Wiwa", "Yukpa", "Kogui", "Inga", "Kankuamo", "Chimila", "Zenu", "Sin Etnia"], "Etnia");
-    validateOptions(19, ["Rural", "Urbana"], "Zona");
-    validateDate(24, "Fecha Ingreso al programa");
-    validateOptions(25, ["Si", "No"], "DX HTA");
-    validateDate(28, "Fecha Diagnóstico HTA", true);
-    validateOptions(29, ["Si", "No"], "DX DM");
-    validateDate(30, "Fecha Diagnóstico DM", true);
-    validateOptions(31, ["Tipo 1 Insulinodependiente", "Tipo 2 No Insulinodependiente", "No Aplica"], "Tipo DM");
-    validateOptions(32, ["HTA o DM", "Autoinmune", "Nefropatía Obstructiva", "Enfermedad Poliquistica", "No tiene ERC", "Otras"], "Causa ERC");
-    validateNumber(33, "TAS");
-    validateNumber(34, "TAD");
-    validateOptions(36, ["Si", "No"], "Fumador");
-    validateNumber(37, "Peso");
-    validateNumber(38, "Talla");
-    validateNumber(41, "Perimetro Abdominal");
-    validateOptions(43, ["Riesgo Alto", "Riesgo Bajo", "Riesgo Moderado", "No se Clasifico"], "Clasificación Riesgo Cardio.");
-    validateDate(44, "Fecha Clasificacion RCV");
-    validateDate(46, "Fecha Creatinina");
-    validateNumber(47, "Resultado Creatinina");
-    validateDate(48, "Fecha Microalbuminuria", true);
-    validateNumber(49, "Resultado Microalbuminuria", true);
-    validateDate(50, "Fecha Uroanalisis", true);
-    validateOptions(51, ["Normal", "Proteinura", "Hematuria", "Otra"], "Resultado Uroanalisis", true);
-    validateDate(52, "Fecha Col Total", true);
-    validateNumber(53, "Resultado Col Total", true);
-    validateDate(54, "Fecha Col LDL", true);
-    validateNumber(55, "Resultado Col LDL", true);
-    validateNumber(56, "Resultado Col HDL", true);
-    validateNumber(57, "Resultado Trigliceridos", true);
-    validateNumber(58, "No de Controles RCV", true);
-    validateDate(59, "Fecha Glicemia Basal", true);
-    validateDate(60, "Fecha Hemoglobina Glicosilada", true);
-    validateNumber(61, "Resultado Hemoglobina Glicosilada", true);
-    validateDate(62, "Fecha Prueba de Ojo", true);
-    validateOptions(63, ["Si", "No"], "Resultados Prueba Ojo", true);
-    validateNumber(64, "Dosis Insulina", true);
-    validateDate(65, "Fecha Electrocardiograma", true);
-    validateOptions(66, ["Normal", "Enf. Coronaria", "Trans. Ritmo", "Hipertrofia Ventricular", "Hipertrofia Auricular", "Otro"], "Resultado Electrocardiograma", true);
-    validateDate(67, "Fecha Ecocardiograma", true);
-    validateOptions(68, ["Si", "No"], "Resultado Ecocardiograma", true);
-    validateDate(69, "Fecha Holter", true);
+    validateOptions(6, ["CC", "MS", "RC", "TI", "PA", "CD", "AS", "PT"], "TI IDENTIFICIÓN");
+    validateDate(8, "FECHA DE NACIMIENTO");
+    validateOptions(11, ["FEMENINO", "MASCULINO"], "SEXO");
+    validateOptions(12, ["S", "C"], "RÉGIMEN DE AFILACIÓN");
+    validateOptions(13, ["INDÍGENA", "ROM (GITANO)", "RAIZAL DEL ARCHIPIELAGO", "NEGRO (A), MULATO, AFROAMERICANO", "MESTIZO", "NINGUNAS DE LAS ANTERIORES"], "PERTENENCIA ÉTNICA");
+    validateOptions(15, ["WAYUU", "ARHUACO", "WIWA", "YUKPA", "KOGUI", "INGA", "KANKUAMO", "CHIMILA", "ZENU", "SIN ETNIA"], "ETNIA");
+    validateOptions(19, ["RURAL", "URBANA"], "ZONA DE UBICACIÓN DE LA VIVIENDA");
+    validateDate(24, "FECHA INSCRIPCION PROGRAMA DE HTA - DM)");
+    validateOptions(25, ["SI", "NO"], "FUMA");
+    validateOptions(26, ["SI", "NO"], "CONSUMO DE ALCOHOL");
+    validateOptions(27, ["SI", "NO"], "DX CONFIRMADO HTA");
+    validateDate(28, "FECHA DX HTA", true);
+    validateOptions(29, ["SI", "NO"], "DX CONFIRMADO DM");
+    validateDate(30, "FECHA DX DM", true);
+    validateOptions(31, ["TIPO 1 INSULINODEPENDIENTE", "TIPO 2 NO INSULINODEPENDIENTE", "NO APLICA"], "TIPO DE DM");
+    validateOptions(32, ["HTA O DM", "AUTOINMUNE", "NEFROPATÍA OBSTRUCTIVA", "ENFERMEDAD POLIQUISTICA", "NO TIENE ERC", "OTRAS"], "Etiología de la ERC");
+    validateNumber(33, "TENSIÓN ARTERIAL SISTÓLICA AL INGRESO A BASE");
+    validateNumber(34, "TENSIÓN ARTERIAL DIASTÓLICA AL INGRESO A BASE");
+    validateOptions(36, ["SI", "NO"], "HTA CONTROLADA");
+    validateNumber(37, "ÚLTIMO PESO");
+    validateNumber(38, "TALLA");
+    validateNumber(41, "ÚLTIMA MEDICIÓN DE PERIMETRO ABDOMINAL");
+    validateOptions(43, ["RIESGO ALTO", "RIESGO BAJO", "RIESGO MODERADO", "NO SE CLASIFICO"], "CLASIFICACION DEL RCV ACTUAL AL INGRESO A BASE");
+    validateDate(44, "FECHA DE CLASIFICACIÓN DE RCV AL INGRESO A BASE");
+    validateDate(46, "FECHA DE CLASIFICACIÓN DE RCV", true);
+    validateNumber(47, "HEMOGRAMA", true);
+    validateDate(48, "FECHA DEL HEMOGRAMA", true);
+    validateNumber(49, "GLICEMIA BASAL", true);
+    validateDate(50, "FECHA DE GLICEMIA BASAL", true);
+    validateOptions(51, ["NORMAL", "PROTEINURA", "HEMATURIA", "OTRA"], "PARCIAL DE ORINA", true);
+    validateDate(52, "FECHA PARCIAL DE ORINA", true);
+    validateNumber(53, "CREATININA SANGRE (mg/dl)", true);
+    validateDate(54, "FECHA CREATININA SANGRE", true);
+    validateNumber(55, "COLESTEROL TOTAL", true);
+    validateNumber(56, "HDL", true);
+    validateNumber(57, "LDL", true);
+    validateNumber(58, "TRIGLICERIDOS", true);
+    validateDate(59, "FECHA PERFIL LIPIDICO", true);
+    validateDate(60, "FECHA DE SOLICITUD DE HEMOGLOBINA GLICOSILADA", true);
+    validateNumber(61, "REPORTE DE HEMOGLOBINA GLICOSILADA", true);
+    validateDate(62, "FECHA DE REPORTE DE HEMOGLOBINA GLICOSILADA", true);
+    validateOptions(63, ["SI", "NO"], "DM CONTROLADA", true);
+    validateNumber(64, "ALBUMINURIA", true);
+    validateDate(65, "FECHA ALBUMINURIA", true);
+    validateOptions(66, ["NORMAL", "ENF. CORONARIA", "TRANS. RITMO", "HIPERTROFIA VENTRICULAR", "HIPERTROFIA AURICULAR", "OTRO"], "REPORTE DE EKG", true);
+    validateDate(67, "FECHA DE EKG", true);
+    validateOptions(68, ["SI", "NO"], "ECOCARDIOGRAMA", true);
+    validateDate(69, "FECHA DE REPORTE DEL ECOCARDIOGRAMA", true);
 
     // Columns 70-80 are ignored as requested
 
     // Loop for monthly controls (columns 81 to 104)
     for (let j = 0; j < 12; j++) {
         const baseCol = 81;
-        validateDate(baseCol + j * 2, `Fecha Control ${j + 1}`, true);
-        validateOptions(baseCol + j * 2 + 1, ["Medico", "Enfermera", "Aux. Enfermeria", "MEDICO GRAL", "MEDICO Y ENFERMERA"], `Profesional Control ${j + 1}`, true);
+        validateDate(baseCol + (j * 2), `Fecha Control ${j + 1}`, true);
+        validateOptions(baseCol + (j * 2) + 1, ["MEDICO", "ENFERMERA", "AUX. ENFERMERIA", "MEDICO GRAL", "MEDICO Y ENFERMERA"], `Profesional Control ${j + 1}`, true);
     }
     
-    validateDate(105, "Fecha Proximo Control", true);
-    validateNumber(106, "TAS Ultima Toma");
-    validateNumber(107, "TAD Ultima Toma");
-    validateDate(109, "Fecha Ultima Toma TA", true);
+    validateDate(105, "FECHA DE PROXIMO CONTROL", true);
+    validateNumber(106, "ÚLTIMA TENSIÓN ARTERIAL SISTÓLICA");
+    validateNumber(107, "ÚLTIMA TENSIÓN ARTERIAL DIASTÓLICA");
     
-    validateOptions(118, ["Si", "No"], "Remisión", true); // Remitido a
-    validateDate(119, "Fecha de Remision", true);
+    validateOptions(118, ["SI", "NO"], "ADHERENCIA AL TRATAMIENTO FARMACOLOGICO", true);
+    validateDate(120, "FECHA DE REMISION", true);
     
-    validateDate(122, "Fecha de Muerte", true);
+    validateDate(124, "FECHA DE MUERTE", true);
   });
 
   return errors;
@@ -350,6 +353,7 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
     const NORM = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
     const baseFolderName = module === 'RCV' ? 'Validacion_Rcv' : 'Validacion_Gestantes';
+    // The file extension is now always .xlsx for Gestantes and .csv for RCV.
     const fileExtension = module === 'RCV' ? '.csv' : '.xlsx';
 
     const baseDir = path.join(process.cwd(), 'public', baseFolderName);
