@@ -14,27 +14,23 @@ const VALID_MUNICIPIOS_GESTANTE = [
     "BARRANCAS", "FONSECA", "ALBANIA", "DISTRACCION", "URIBIA"
 ];
 
-async function validateGestanteFileContent(content: string): Promise<ValidationError[]> {
+async function validateGestanteFileContent(rows: any[][]): Promise<ValidationError[]> {
   const errors: ValidationError[] = [];
-  const rows = content.split(/\r?\n/);
   const afiliadosSet = await getAfiliadosIdSet();
 
-  let dataStartIndex = rows.findIndex(row => /^\d+\t/.test(row));
+  let dataStartIndex = rows.findIndex(row => /^\d+$/.test(String(row[0])));
   if (dataStartIndex === -1) dataStartIndex = 3; 
   
   const dataRows = rows.slice(dataStartIndex); 
 
-  dataRows.forEach((row, rowIndex) => {
+  dataRows.forEach((columns, rowIndex) => {
     const i = rowIndex + dataStartIndex + 1;
-    if (row.trim() === '') return;
+    if (columns.every(col => col === null || col === '')) return;
 
-    // FIX: Use a more robust split regex to handle empty fields correctly
-    const columns = row.split('\t');
-    
-    const NORM = (s: string) => (s || '').trim().toUpperCase();
+    const NORM = (s: any) => (s || '').toString().trim().toUpperCase();
 
     // Regla de validación de afiliado
-    const idAfiliado = columns[2]?.trim();
+    const idAfiliado = columns[2]?.toString().trim();
     if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
         errors.push({
             location: `Fila ${i}, Col 3`,
@@ -70,7 +66,7 @@ async function validateGestanteFileContent(content: string): Promise<ValidationE
             return null;
         }
         
-        if (!/^\d{4}\/\d{2}\/\d{1,2}$/.test(value)) {
+        if (!/^\d{4}\/\d{2}\/\d{1,2}$/.test(String(value))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Formato de fecha incorrecto',
@@ -78,7 +74,7 @@ async function validateGestanteFileContent(content: string): Promise<ValidationE
             });
             return null;
         }
-        const [year, month, day] = value.split('/').map(Number);
+        const [year, month, day] = String(value).split('/').map(Number);
         const date = new Date(year, month - 1, day);
         if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
              errors.push({ location: `Fila ${i}, Col ${colIdx}`, type: 'Fecha inválida', description: `La fecha "${value}" para ${colName} no es una fecha calendario válida.` });
@@ -139,22 +135,18 @@ async function validateGestanteFileContent(content: string): Promise<ValidationE
 }
 
 
-async function validateRcvFileContent(content: string): Promise<ValidationError[]> {
+async function validateRcvFileContent(rows: any[][]): Promise<ValidationError[]> {
   const errors: ValidationError[] = [];
-  const rows = content.split(/\r?\n/);
   const afiliadosSet = await getAfiliadosIdSet();
 
   const dataRows = rows.slice(3); 
 
-  dataRows.forEach((row, rowIndex) => {
+  dataRows.forEach((columns, rowIndex) => {
     const i = rowIndex + 4;
-    if (row.trim() === '') return;
+    if (columns.every(col => col === null || col === '')) return;
 
-    // FIX: Use a more robust split regex to handle empty fields correctly
-    const columns = row.split('\t');
-    
     // Regla de validación de afiliado
-    const idAfiliado = columns[6]?.trim();
+    const idAfiliado = columns[6]?.toString().trim();
     if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
         errors.push({
             location: `Fila ${i}, Col 7`,
@@ -164,7 +156,7 @@ async function validateRcvFileContent(content: string): Promise<ValidationError[
     }
 
     const validateOptions = (colIdx: number, validOptions: string[], colName: string) => {
-        const value = columns[colIdx - 1]?.trim().toUpperCase();
+        const value = columns[colIdx - 1]?.toString().trim().toUpperCase();
         if (value && !validOptions.map(opt => opt.toUpperCase()).includes(value)) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
@@ -176,7 +168,7 @@ async function validateRcvFileContent(content: string): Promise<ValidationError[
     
     const validateDate = (colIdx: number, colName: string) => {
         const value = columns[colIdx - 1];
-        if (value && !/^\d{4}\/\d{2}\/\d{1,2}$/.test(value)) {
+        if (value && !/^\d{4}\/\d{2}\/\d{1,2}$/.test(String(value))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Formato de fecha incorrecto',
@@ -187,7 +179,7 @@ async function validateRcvFileContent(content: string): Promise<ValidationError[
 
     const validateNumber = (colIdx: number, colName: string) => {
       const value = columns[colIdx-1];
-       if (value && isNaN(Number(value.replace(',','.')))) {
+       if (value && isNaN(Number(String(value).replace(',','.')))) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Valor no numérico',
@@ -196,7 +188,7 @@ async function validateRcvFileContent(content: string): Promise<ValidationError[
        }
     };
 
-    if (!/^\d+$/.test(columns[0])) errors.push({ location: `Fila ${i}, Col 1`, type: 'Inválido', description: 'El consecutivo debe ser un número entero.' });
+    if (!/^\d+$/.test(String(columns[0]))) errors.push({ location: `Fila ${i}, Col 1`, type: 'Inválido', description: 'El consecutivo debe ser un número entero.' });
 
     validateOptions(6, ["CC", "MS", "RC", "TI", "PA", "CD", "AS", "PT"], "Tipo de documento");
     validateDate(8, "Fecha de Nacimiento");
@@ -273,17 +265,17 @@ export interface ValidationError {
 export async function validateFile(file: File, validatorType: 'gestante' | 'rcv') {
     try {
         const data = await file.arrayBuffer();
-        let fileContentForValidation: string;
         
-        const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy/mm/dd' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
-        fileContentForValidation = XLSX.utils.sheet_to_csv(worksheet, { FS: "\t", dateNF: 'yyyy/mm/dd' });
+        // Convert sheet to an array of arrays, which is more robust
+        const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
         
         const validationErrors = validatorType === 'gestante' 
-            ? await validateGestanteFileContent(fileContentForValidation)
-            : await validateRcvFileContent(fileContentForValidation);
+            ? await validateGestanteFileContent(rowsAsArray)
+            : await validateRcvFileContent(rowsAsArray);
 
         return { errors: validationErrors };
 
