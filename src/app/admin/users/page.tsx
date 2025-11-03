@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Edit, Trash2, Search } from 'lucide-react';
 import { searchAfiliados, addAfiliado, updateAfiliado, deleteAfiliado, type Afiliado, getAfiliadosCount } from './actions';
 
-type FormState = Afiliado;
+type FormState = Omit<Afiliado, 'nombre_completo'>;
 
 export default function AdminAfiliadosPage() {
     const [afiliados, setAfiliados] = useState<Afiliado[]>([]);
@@ -79,8 +79,8 @@ export default function AdminAfiliadosPage() {
     };
 
     const handleSubmit = async () => {
-        if (!formState.numero_identificacion || !formState.primer_nombre || !formState.primer_apellido) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Identificación, primer nombre y primer apellido son obligatorios.' });
+        if (!formState.numero_identificacion || (!formState.primer_nombre && !formState.primer_apellido)) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Identificación y al menos un nombre o apellido son obligatorios.' });
             return;
         }
 
@@ -171,7 +171,7 @@ export default function AdminAfiliadosPage() {
                                 <TableBody>
                                     {afiliados.length > 0 ? afiliados.map((user) => (
                                         <TableRow key={user.numero_identificacion}>
-                                            <TableCell className="font-medium">{`${user.primer_nombre} ${user.segundo_nombre} ${user.primer_apellido} ${user.segundo_apellido}`}</TableCell>
+                                            <TableCell className="font-medium">{user.nombre_completo}</TableCell>
                                             <TableCell>{user.tipo_identificacion}</TableCell>
                                             <TableCell>{user.numero_identificacion}</TableCell>
                                             <TableCell>{user.sexo}</TableCell>
