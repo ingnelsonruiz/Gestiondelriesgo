@@ -164,7 +164,7 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
 
   // --- PRIMER MOMENTO: Validación de Afiliados ---
   dataRows.forEach((columns, rowIndex) => {
-    if (!columns || columns.every(col => col === null || col === '')) return;
+    if (!columns || columns.length < 7 || columns.every(col => col === null || col === '')) return;
     
     const idAfiliado = columns[6]?.toString().trim();
     if (idAfiliado && !afiliadosSet.has(idAfiliado)) {
@@ -184,12 +184,15 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
   const errors: ValidationError[] = [];
   dataRows.forEach((columns, rowIndex) => {
     const i = rowIndex + dataStartIndex + 1;
-    if (!columns || columns.every(col => col === null || col === '')) return;
+    if (!columns || columns.length === 0 || columns.every(col => col === null || col === '')) return;
+
+    const NORM = (s: any) => (s || '').toString().trim().toUpperCase();
 
     const validateOptions = (colIdx: number, validOptions: string[], colName: string, allowBlank = false) => {
-        const value = columns[colIdx - 1]?.toString().trim().toUpperCase();
+        if (colIdx > columns.length) return; // Skip if column does not exist
+        const value = NORM(columns[colIdx - 1]);
         if (allowBlank && !value) return;
-        if (value && !validOptions.map(opt => opt.toUpperCase()).includes(value)) {
+        if (value && !validOptions.map(opt => NORM(opt)).includes(value)) {
             errors.push({
                 location: `Fila ${i}, Col ${colIdx}`,
                 type: 'Valor no válido',
@@ -199,6 +202,7 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     };
     
     const validateDate = (colIdx: number, colName: string, allowBlank = false) => {
+        if (colIdx > columns.length) return;
         const value = columns[colIdx - 1];
         if (allowBlank && (!value || String(value).trim() === '')) return;
         if (value && !/^\d{4}\/\d{2}\/\d{2}$/.test(String(value)) && !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
@@ -211,6 +215,7 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     };
 
     const validateNumber = (colIdx: number, colName: string, allowBlank = false) => {
+      if (colIdx > columns.length) return;
       const value = columns[colIdx-1];
        if (allowBlank && (!value || String(value).trim() === '')) return;
        if (value && isNaN(Number(String(value).replace(',','.')))) {
@@ -222,16 +227,22 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
        }
     };
 
-    if (!/^\d+$/.test(String(columns[0]))) errors.push({ location: `Fila ${i}, Col 1`, type: 'Inválido', description: 'El consecutivo debe ser un número entero.' });
+    // --- Applying rules based on the 125-column structure ---
 
+    if (!/^\d+$/.test(String(columns[0]))) errors.push({ location: `Fila ${i}, Col 1`, type: 'Inválido', description: 'El consecutivo (N°) debe ser un número entero.' });
+
+    // Columns 2-5: Names (text, no specific validation)
     validateOptions(6, ["CC", "MS", "RC", "TI", "PA", "CD", "AS", "PT"], "TI IDENTIFICIÓN");
+    // Column 7: ID (validated in first pass)
     validateDate(8, "FECHA DE NACIMIENTO");
+    // Columns 9-10: Calculated fields
     validateOptions(11, ["FEMENINO", "MASCULINO"], "SEXO");
     validateOptions(12, ["S", "C"], "RÉGIMEN DE AFILACIÓN");
     validateOptions(13, ["INDÍGENA", "ROM (GITANO)", "RAIZAL DEL ARCHIPIELAGO", "NEGRO (A), MULATO, AFROAMERICANO", "MESTIZO", "NINGUNAS DE LAS ANTERIORES"], "PERTENENCIA ÉTNICA");
+    // Column 14: GRUPO POBLACIONAL (text, no specific options)
     validateOptions(15, ["WAYUU", "ARHUACO", "WIWA", "YUKPA", "KOGUI", "INGA", "KANKUAMO", "CHIMILA", "ZENU", "SIN ETNIA"], "ETNIA");
-    validateOptions(19, ["RURAL", "URBANA"], "ZONA DE UBICACIÓN DE LA VIVIENDA");
-    validateDate(24, "FECHA INSCRIPCION PROGRAMA DE HTA - DM)");
+    // Columns 16-23: Location and IPS info (text)
+    validateDate(24, "FECHA INSCRIPCION PROGRAMA DE HTA - DM");
     validateOptions(25, ["SI", "NO"], "FUMA");
     validateOptions(26, ["SI", "NO"], "CONSUMO DE ALCOHOL");
     validateOptions(27, ["SI", "NO"], "DX CONFIRMADO HTA");
@@ -242,12 +253,16 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     validateOptions(32, ["HTA O DM", "AUTOINMUNE", "NEFROPATÍA OBSTRUCTIVA", "ENFERMEDAD POLIQUISTICA", "NO TIENE ERC", "OTRAS"], "Etiología de la ERC");
     validateNumber(33, "TENSIÓN ARTERIAL SISTÓLICA AL INGRESO A BASE");
     validateNumber(34, "TENSIÓN ARTERIAL DIASTÓLICA AL INGRESO A BASE");
+    // Column 35: Calculated
     validateOptions(36, ["SI", "NO"], "HTA CONTROLADA");
     validateNumber(37, "ÚLTIMO PESO");
     validateNumber(38, "TALLA");
+    // Columns 39-40: Calculated
     validateNumber(41, "ÚLTIMA MEDICIÓN DE PERIMETRO ABDOMINAL");
+    // Column 42: Calculated
     validateOptions(43, ["RIESGO ALTO", "RIESGO BAJO", "RIESGO MODERADO", "NO SE CLASIFICO"], "CLASIFICACION DEL RCV ACTUAL AL INGRESO A BASE");
     validateDate(44, "FECHA DE CLASIFICACIÓN DE RCV AL INGRESO A BASE");
+    // Column 45: Calculated
     validateDate(46, "FECHA DE CLASIFICACIÓN DE RCV", true);
     validateNumber(47, "HEMOGRAMA", true);
     validateDate(48, "FECHA DEL HEMOGRAMA", true);
@@ -257,11 +272,13 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     validateDate(52, "FECHA PARCIAL DE ORINA", true);
     validateNumber(53, "CREATININA SANGRE (mg/dl)", true);
     validateDate(54, "FECHA CREATININA SANGRE", true);
+    // PERFIL LIPIDICO
     validateNumber(55, "COLESTEROL TOTAL", true);
     validateNumber(56, "HDL", true);
     validateNumber(57, "LDL", true);
     validateNumber(58, "TRIGLICERIDOS", true);
     validateDate(59, "FECHA PERFIL LIPIDICO", true);
+
     validateDate(60, "FECHA DE SOLICITUD DE HEMOGLOBINA GLICOSILADA", true);
     validateNumber(61, "REPORTE DE HEMOGLOBINA GLICOSILADA", true);
     validateDate(62, "FECHA DE REPORTE DE HEMOGLOBINA GLICOSILADA", true);
@@ -270,26 +287,31 @@ async function validateRcvFileContent(rows: string[][]): Promise<ValidationError
     validateDate(65, "FECHA ALBUMINURIA", true);
     validateOptions(66, ["NORMAL", "ENF. CORONARIA", "TRANS. RITMO", "HIPERTROFIA VENTRICULAR", "HIPERTROFIA AURICULAR", "OTRO"], "REPORTE DE EKG", true);
     validateDate(67, "FECHA DE EKG", true);
-    validateOptions(68, ["SI", "NO"], "ECOCARDIOGRAMA", true);
+    validateOptions(68, ["SI", "NO"], "Resultado Ecocardiograma", true);
     validateDate(69, "FECHA DE REPORTE DEL ECOCARDIOGRAMA", true);
 
     // Columns 70-80 are ignored as requested
 
-    // Loop for monthly controls (columns 81 to 104)
+    // Monthly controls (columns 81 to 104)
     for (let j = 0; j < 12; j++) {
-        const baseCol = 81;
-        validateDate(baseCol + (j * 2), `Fecha Control ${j + 1}`, true);
-        validateOptions(baseCol + (j * 2) + 1, ["MEDICO", "ENFERMERA", "AUX. ENFERMERIA", "MEDICO GRAL", "MEDICO Y ENFERMERA"], `Profesional Control ${j + 1}`, true);
+        const baseCol = 81 + (j * 2);
+        validateDate(baseCol, `Fecha Control ${j + 1}`, true);
+        validateOptions(baseCol + 1, ["MEDICO", "ENFERMERA", "AUX. ENFERMERIA", "MEDICO GRAL", "MEDICO Y ENFERMERA"], `Profesional Control ${j + 1}`, true);
     }
     
     validateDate(105, "FECHA DE PROXIMO CONTROL", true);
     validateNumber(106, "ÚLTIMA TENSIÓN ARTERIAL SISTÓLICA");
     validateNumber(107, "ÚLTIMA TENSIÓN ARTERIAL DIASTÓLICA");
+    // Columns 108-110: Calculated
     
+    // Columns 111-117: Medications (text)
     validateOptions(118, ["SI", "NO"], "ADHERENCIA AL TRATAMIENTO FARMACOLOGICO", true);
+    // Column 119: Remitido a (text)
     validateDate(120, "FECHA DE REMISION", true);
-    
+    // Column 121-122: Complicaciones, Novedades (text)
+    // Column 123: Causa de muerte (text)
     validateDate(124, "FECHA DE MUERTE", true);
+    // Column 125: Observaciones (text)
   });
 
   return errors;
@@ -322,10 +344,12 @@ export async function validateFile(file: File, validatorType: 'gestante' | 'rcv'
             });
         } else { // 'gestante'
             const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy/mm/dd' });
+            const workbook = XLSX.read(data, { type: 'array', cellDates: false, dateNF: 'yyyy/mm/dd' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, dateNF: 'yyyy/mm/dd' });
+            // Using `header: 1` converts the sheet to an array of arrays.
+            // `defval: null` ensures empty cells are null, not omitted.
+            const rowsAsArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false, dateNF: 'yyyy/mm/dd' });
             const validationErrors = await validateGestanteFileContent(rowsAsArray);
             return { errors: validationErrors };
         }
@@ -353,7 +377,7 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
     const NORM = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
     const baseFolderName = module === 'RCV' ? 'Validacion_Rcv' : 'Validacion_Gestantes';
-    // The file extension is now always .xlsx for Gestantes and .csv for RCV.
+    // The file extension is now always .csv for RCV. Gestantes remains .xlsx.
     const fileExtension = module === 'RCV' ? '.csv' : '.xlsx';
 
     const baseDir = path.join(process.cwd(), 'public', baseFolderName);
@@ -379,3 +403,5 @@ export async function saveValidatedFile(payload: SaveValidatedFilePayload) {
         throw new Error(`No se pudo guardar el archivo en el servidor. Detalles: ${error.message}`);
     }
 }
+
+    
