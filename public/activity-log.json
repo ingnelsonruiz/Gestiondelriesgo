@@ -1,5 +1,17 @@
 [
   {
+    "provider": "ADMIN",
+    "action": "Subida de archivo: Fenix",
+    "details": "Archivo: Inicio de Sesión",
+    "timestamp": "2025-11-19T18:29:21.726Z"
+  },
+  {
+    "provider": "ADMIN",
+    "action": "Subida de archivo: Fenix",
+    "details": "Archivo: Inicio de Sesión",
+    "timestamp": "2025-11-13T12:45:22.071Z"
+  },
+  {
     "action": "Admin: Añadir Prestador",
     "provider": "ADMIN",
     "details": "Añadido KANKUAMA IPSI",
